@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: autostrada-sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=AutostradaDB123!
+      - MSSQL_PID=Express
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    networks:
+      - autostrada-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:1433"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  api:
+    build:
+      context: ./backend/AutostradaAuctions.Api
+      dockerfile: Dockerfile
+    container_name: autostrada-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5000
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=AutostradaAuctions;User Id=sa;Password=AutostradaDB123!;TrustServerCertificate=true;
+    ports:
+      - "5000:5000"
+    depends_on:
+      - sqlserver
+    networks:
+      - autostrada-network
+    restart: unless-stopped
+
+volumes:
+  sqlserver_data:
+
+networks:
+  autostrada-network:
+    driver: bridge
