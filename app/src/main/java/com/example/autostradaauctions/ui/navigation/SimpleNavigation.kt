@@ -8,6 +8,9 @@ import androidx.navigation.compose.rememberNavController
 import com.example.autostradaauctions.ui.screens.SimpleHomeScreen
 import com.example.autostradaauctions.ui.screens.EnhancedAuctionDetailScreen
 import com.example.autostradaauctions.ui.screens.SimpleLoginScreen
+import com.example.autostradaauctions.ui.screens.EnhancedLoginScreen
+import com.example.autostradaauctions.ui.screens.UserProfileScreen
+import com.example.autostradaauctions.ui.screens.FavoritesScreen
 
 @Composable
 fun SimpleNavigation(
@@ -23,7 +26,13 @@ fun SimpleNavigation(
                     navController.navigate("auction_detail/$auctionId")
                 },
                 onLoginClick = {
-                    navController.navigate("login")
+                    navController.navigate("enhanced_login")
+                },
+                onProfileClick = {
+                    navController.navigate("profile")
+                },
+                onFavoritesClick = {
+                    navController.navigate("favorites")
                 }
             )
         }
@@ -38,10 +47,48 @@ fun SimpleNavigation(
             )
         }
 
+        // Legacy login screen for backward compatibility
         composable("login") {
             SimpleLoginScreen(
                 onLoginSuccess = {
                     navController.popBackStack("home", inclusive = false)
+                },
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        // Enhanced authentication screens
+        composable("enhanced_login") {
+            EnhancedLoginScreen(
+                onLoginSuccess = {
+                    navController.popBackStack("home", inclusive = false)
+                },
+                onNavigateToRegister = {
+                    // For now, stay on login screen - register can be added later
+                },
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable("profile") {
+            UserProfileScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onLogout = {
+                    navController.popBackStack("home", inclusive = false)
+                }
+            )
+        }
+
+        composable("favorites") {
+            FavoritesScreen(
+                onAuctionClick = { auctionId ->
+                    navController.navigate("auction_detail/$auctionId")
                 },
                 onBackClick = {
                     navController.popBackStack()

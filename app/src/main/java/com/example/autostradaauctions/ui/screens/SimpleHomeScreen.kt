@@ -27,6 +27,8 @@ import com.example.autostradaauctions.ui.viewmodel.HomeViewModel
 fun SimpleHomeScreen(
     onAuctionClick: (String) -> Unit = {},
     onLoginClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {},
+    onFavoritesClick: () -> Unit = {},
     viewModel: HomeViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -56,9 +58,21 @@ fun SimpleHomeScreen(
                         contentDescription = "Refresh"
                     )
                 }
-                IconButton(onClick = onLoginClick) {
+                IconButton(onClick = onFavoritesClick) {
+                    Icon(
+                        imageVector = Icons.Default.Favorite,
+                        contentDescription = "Favorites"
+                    )
+                }
+                IconButton(onClick = onProfileClick) {
                     Icon(
                         imageVector = Icons.Default.Person,
+                        contentDescription = "Profile"
+                    )
+                }
+                IconButton(onClick = onLoginClick) {
+                    Icon(
+                        imageVector = Icons.Default.Login,
                         contentDescription = "Login"
                     )
                 }

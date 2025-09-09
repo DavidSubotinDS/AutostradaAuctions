@@ -24,12 +24,33 @@ android {
     }
 
     buildTypes {
+        debug {
+            isDebuggable = true
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+            
+            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:5001/api/\"")
+            buildConfigField("String", "SIGNALR_HUB_URL", "\"http://10.0.2.2:5001/biddingHub\"")
+            buildConfigField("boolean", "ENABLE_LOGGING", "true")
+        }
+        
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            isDebuggable = false
+            
+            // Production API endpoints (replace with your production URLs)
+            buildConfigField("String", "BASE_URL", "\"https://your-production-api.com/api/\"")
+            buildConfigField("String", "SIGNALR_HUB_URL", "\"https://your-production-api.com/biddingHub\"")
+            buildConfigField("boolean", "ENABLE_LOGGING", "false")
+            
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            
+            // Enable signing for release builds
+            signingConfig = signingConfigs.getByName("debug") // Replace with release signing config
         }
     }
     compileOptions {
@@ -41,6 +62,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.14"
@@ -93,11 +115,20 @@ dependencies {
     // Security for encrypted preferences
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
 
+    // Testing dependencies
     testImplementation(libs.junit)
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+    testImplementation("org.mockito:mockito-core:5.5.0")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.1.0")
+    testImplementation("androidx.arch.core:core-testing:2.2.0")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.11.0")
+    
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
+    androidTestImplementation("androidx.compose.ui:ui-test-manifest")
+    androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 }
