@@ -1,10 +1,15 @@
 package com.example.autostradaauctions.di
 
+import android.content.Context
 import com.example.autostradaauctions.data.api.AuctionApiService
+import com.example.autostradaauctions.data.api.AuthApiService
 import com.example.autostradaauctions.data.api.ApiConfig
+import com.example.autostradaauctions.data.auth.TokenManager
 import com.example.autostradaauctions.data.repository.AuctionRepository
+import com.example.autostradaauctions.data.repository.AuthRepository
 import com.example.autostradaauctions.data.repository.BiddingRepository
 import com.example.autostradaauctions.data.websocket.BidWebSocketClient
+import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -13,8 +18,36 @@ import java.util.concurrent.TimeUnit
 
 object AppContainer {
     
+    private lateinit var applicationContext: Context
+    
+    fun initialize(context: Context) {
+        applicationContext = context.applicationContext
+    }
+    
+    val tokenManager: TokenManager by lazy {
+        TokenManager(applicationContext)
+    }
+    
+    private val authInterceptor: Interceptor by lazy {
+        Interceptor { chain ->
+            val originalRequest = chain.request()
+            val token = tokenManager.getAuthHeader()
+            
+            val newRequest = if (token != null) {
+                originalRequest.newBuilder()
+                    .header("Authorization", token)
+                    .build()
+            } else {
+                originalRequest
+            }
+            
+            chain.proceed(newRequest)
+        }
+    }
+    
     private val httpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
+            .addInterceptor(authInterceptor)
             .addInterceptor(
                 HttpLoggingInterceptor().apply {
                     level = HttpLoggingInterceptor.Level.BODY
@@ -36,6 +69,14 @@ object AppContainer {
     
     val auctionApiService: AuctionApiService by lazy {
         retrofit.create(AuctionApiService::class.java)
+    }
+    
+    val authApiService: AuthApiService by lazy {
+        retrofit.create(AuthApiService::class.java)
+    }
+    
+    val authRepository: AuthRepository by lazy {
+        AuthRepository(authApiService, tokenManager)
     }
     
     val auctionRepository: AuctionRepository by lazy {

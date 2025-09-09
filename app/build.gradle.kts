@@ -90,6 +90,9 @@ dependencies {
     // SignalR for real-time communication
     implementation("com.microsoft.signalr:signalr:7.0.0")
 
+    // Security for encrypted preferences
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
