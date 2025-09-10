@@ -72,6 +72,7 @@ fun UserProfileScreen(
             }
             
             uiState.error != null -> {
+                val errorMessage = uiState.error
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -80,7 +81,7 @@ fun UserProfileScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = uiState.error,
+                            text = errorMessage ?: "Unknown error occurred",
                             color = MaterialTheme.colorScheme.error
                         )
                         Spacer(modifier = Modifier.height(16.dp))
@@ -92,6 +93,7 @@ fun UserProfileScreen(
             }
             
             uiState.user != null -> {
+                val user = uiState.user!!
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
@@ -99,7 +101,7 @@ fun UserProfileScreen(
                 ) {
                     item {
                         UserInfoSection(
-                            user = uiState.user,
+                            user = user,
                             onEditProfile = { viewModel.toggleEditMode() }
                         )
                     }

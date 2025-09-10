@@ -24,6 +24,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.autostradaauctions.data.model.Auction
+import com.example.autostradaauctions.data.model.AuctionDetail
 import com.example.autostradaauctions.data.model.Bid
 import com.example.autostradaauctions.data.websocket.BidWebSocketClient
 import java.text.NumberFormat
@@ -32,7 +33,7 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RealTimeBiddingPanel(
-    auction: Auction,
+    auction: AuctionDetail,
     bids: List<Bid>,
     connectionState: BidWebSocketClient.ConnectionState,
     onPlaceBid: (Double, String) -> Unit,
@@ -137,7 +138,7 @@ private fun ConnectionStatusChip(state: BidWebSocketClient.ConnectionState) {
             Icons.Default.CheckCircle
         )
         BidWebSocketClient.ConnectionState.CONNECTING -> Triple(
-            Color.Orange,
+            Color(0xFFFF9800), // Orange color using hex value
             "Connecting",
             Icons.Default.Schedule
         )

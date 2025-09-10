@@ -3,7 +3,10 @@ package com.example.autostradaauctions.data.repository
 import com.example.autostradaauctions.data.api.AuctionApiService
 import com.example.autostradaauctions.data.model.Bid
 import com.example.autostradaauctions.data.websocket.BidWebSocketClient
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.launch
 
 class BiddingRepository(
     private val apiService: AuctionApiService,
@@ -35,7 +38,9 @@ class BiddingRepository(
             // Place bid via REST API first
             apiService.placeBid(auctionId, PlaceBidRequest(amount, bidderName))
             
-            // The WebSocket will handle the real-time update
+            // Also place bid via WebSocket for real-time update
+            webSocketClient.placeBid(auctionId, amount, bidderName)
+
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

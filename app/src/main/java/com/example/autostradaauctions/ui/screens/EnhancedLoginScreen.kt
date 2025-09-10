@@ -126,9 +126,9 @@ fun EnhancedLoginScreen(
                         ),
                         modifier = Modifier.fillMaxWidth(),
                         isError = uiState.emailError != null,
-                        supportingText = if (uiState.emailError != null) {
-                            { Text(uiState.emailError) }
-                        } else null,
+                        supportingText = uiState.emailError?.let { error ->
+                            { Text(error) }
+                        },
                         singleLine = true
                     )
                     
@@ -167,9 +167,9 @@ fun EnhancedLoginScreen(
                             .fillMaxWidth()
                             .focusRequester(passwordFocusRequester),
                         isError = uiState.passwordError != null,
-                        supportingText = if (uiState.passwordError != null) {
-                            { Text(uiState.passwordError) }
-                        } else null,
+                        supportingText = uiState.passwordError?.let { error ->
+                            { Text(error) }
+                        },
                         singleLine = true
                     )
                     
@@ -197,7 +197,7 @@ fun EnhancedLoginScreen(
                     }
                     
                     // Error Message
-                    if (uiState.error != null) {
+                    uiState.error?.let { errorMessage ->
                         Spacer(modifier = Modifier.height(16.dp))
                         Card(
                             colors = CardDefaults.cardColors(
@@ -217,7 +217,7 @@ fun EnhancedLoginScreen(
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = uiState.error,
+                                    text = errorMessage,
                                     color = MaterialTheme.colorScheme.onErrorContainer,
                                     style = MaterialTheme.typography.bodyMedium
                                 )

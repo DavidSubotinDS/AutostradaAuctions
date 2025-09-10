@@ -65,6 +65,7 @@ fun EnhancedAuctionDetailScreen(
             }
             
             uiState.error != null -> {
+                val errorMessage = uiState.error
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -73,7 +74,7 @@ fun EnhancedAuctionDetailScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = uiState.error,
+                            text = errorMessage ?: "Unknown error occurred",
                             color = MaterialTheme.colorScheme.error
                         )
                         Spacer(modifier = Modifier.height(16.dp))
@@ -85,6 +86,7 @@ fun EnhancedAuctionDetailScreen(
             }
             
             uiState.auction != null -> {
+                val auction = uiState.auction!!
                 Column(
                     modifier = Modifier.fillMaxSize()
                 ) {
@@ -111,20 +113,20 @@ fun EnhancedAuctionDetailScreen(
                         item {
                             // Vehicle Image Gallery
                             VehicleImageGallery(
-                                imageUrls = uiState.auction.vehicle.imageUrls,
-                                vehicleTitle = "${uiState.auction.vehicle.year} ${uiState.auction.vehicle.make} ${uiState.auction.vehicle.model}"
+                                imageUrls = auction.vehicle.imageUrls,
+                                vehicleTitle = "${auction.vehicle.year} ${auction.vehicle.make} ${auction.vehicle.model}"
                             )
                         }
                         
                         item {
                             // Auction Info Card
-                            AuctionInfoCard(auction = uiState.auction)
+                            AuctionInfoCard(auction = auction)
                         }
                         
                         item {
                             // Real-time Bidding Panel
                             RealTimeBiddingPanel(
-                                auction = uiState.auction,
+                                auction = auction,
                                 bids = uiState.bidHistory,
                                 connectionState = uiState.connectionState,
                                 onPlaceBid = { amount, bidderName ->
@@ -136,13 +138,13 @@ fun EnhancedAuctionDetailScreen(
                         
                         item {
                             // Vehicle Details (from your existing ComprehensiveAuctionDetailScreen)
-                            VehicleDetailsSection(auction = uiState.auction)
+                            VehicleDetailsSection(auction = auction)
                         }
                         
                         item {
                             // Description Section
-                            if (uiState.auction.description.isNotBlank()) {
-                                DescriptionSection(description = uiState.auction.description)
+                            if (auction.description.isNotBlank()) {
+                                DescriptionSection(description = auction.description)
                             }
                         }
                         
@@ -199,7 +201,7 @@ fun EnhancedAuctionDetailScreen(
 }
 
 @Composable
-private fun VehicleDetailsSection(auction: com.example.autostradaauctions.data.model.Auction) {
+private fun VehicleDetailsSection(auction: com.example.autostradaauctions.data.model.AuctionDetail) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
@@ -220,10 +222,9 @@ private fun VehicleDetailsSection(auction: com.example.autostradaauctions.data.m
             DetailRowEnhanced("Make", auction.vehicle.make)
             DetailRowEnhanced("Model", auction.vehicle.model)
             DetailRowEnhanced("Year", auction.vehicle.year.toString())
-            auction.vehicle.vin?.let { DetailRowEnhanced("VIN", it) }
-            auction.vehicle.engine?.let { DetailRowEnhanced("Engine", it) }
-            auction.vehicle.transmission?.let { DetailRowEnhanced("Transmission", it) }
-            auction.vehicle.fuelType?.let { DetailRowEnhanced("Fuel Type", it) }
+            DetailRowEnhanced("VIN", auction.vehicle.vin)
+            DetailRowEnhanced("Transmission", auction.vehicle.transmission)
+            DetailRowEnhanced("Fuel Type", auction.vehicle.fuelType)
             DetailRowEnhanced("Color", auction.vehicle.color)
             DetailRowEnhanced("Mileage", "${auction.vehicle.mileage} miles")
         }

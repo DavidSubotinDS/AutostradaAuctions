@@ -88,7 +88,7 @@ class FavoritesViewModel(
         return when (status.lowercase()) {
             "active" -> Color.Green
             "ended" -> Color.Red
-            "pending" -> Color.Orange
+            "pending" -> Color(0xFFFF9800) // Orange
             else -> Color.Gray
         }
     }

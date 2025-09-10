@@ -68,6 +68,7 @@ fun FavoritesScreen(
             }
             
             uiState.error != null -> {
+                val errorMessage = uiState.error
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -76,7 +77,7 @@ fun FavoritesScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = uiState.error,
+                            text = errorMessage ?: "Unknown error occurred",
                             color = MaterialTheme.colorScheme.error,
                             textAlign = TextAlign.Center
                         )

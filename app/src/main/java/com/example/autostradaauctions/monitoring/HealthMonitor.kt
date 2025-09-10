@@ -4,11 +4,9 @@ import android.app.Application
 import android.content.Context
 import android.os.Build
 import android.util.Log
-import com.example.autostradaauctions.BuildConfig
 import com.example.autostradaauctions.config.AppConfig
+import kotlin.math.max
 import kotlinx.coroutines.*
-import java.io.File
-import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
@@ -65,8 +63,8 @@ object HealthMonitor {
             manufacturer = Build.MANUFACTURER,
             osVersion = Build.VERSION.RELEASE,
             apiLevel = Build.VERSION.SDK_INT,
-            appVersion = BuildConfig.VERSION_NAME,
-            buildType = if (BuildConfig.DEBUG) "debug" else "release"
+            appVersion = "1.0.0", // Hardcoded version for now
+            buildType = if (AppConfig.isDebug) "debug" else "release"
         )
         
         logEvent("app_start", mapOf(
@@ -183,7 +181,7 @@ object HealthMonitor {
         logEvent("error", mapOf(
             "message" to (error.message ?: "Unknown error"),
             "stack_trace" to error.stackTraceToString(),
-            "error_type" to error::class.simpleName,
+            "error_type" to (error::class.simpleName ?: "Unknown"),
             "context" to context
         ))
     }
@@ -195,7 +193,7 @@ object HealthMonitor {
         logEvent("crash", mapOf(
             "message" to (throwable.message ?: "Unknown crash"),
             "stack_trace" to throwable.stackTraceToString(),
-            "crash_type" to throwable::class.simpleName,
+            "crash_type" to (throwable::class.simpleName ?: "Unknown"),
             "session_duration" to (System.currentTimeMillis() - sessionStartTime)
         ))
     }

@@ -90,4 +90,9 @@ class TokenManager(private val context: Context) {
         val token = getAccessToken()
         return if (token != null) "Bearer $token" else null
     }
+
+    // Add missing getToken() method for compatibility
+    fun getToken(): String? {
+        return getAccessToken()
+    }
 }

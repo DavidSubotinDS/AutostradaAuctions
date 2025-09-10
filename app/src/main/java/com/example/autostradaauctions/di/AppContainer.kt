@@ -6,6 +6,7 @@ import com.example.autostradaauctions.data.api.AuthApiService
 import com.example.autostradaauctions.data.api.ApiConfig
 import com.example.autostradaauctions.data.auth.TokenManager
 import com.example.autostradaauctions.data.repository.AuctionRepository
+import com.example.autostradaauctions.data.repository.MockAuctionRepository
 import com.example.autostradaauctions.data.repository.AuthRepository
 import com.example.autostradaauctions.data.repository.BiddingRepository
 import com.example.autostradaauctions.data.websocket.BidWebSocketClient
@@ -20,6 +21,9 @@ object AppContainer {
     
     private lateinit var applicationContext: Context
     
+    // Add instance property for singleton access
+    val instance: AppContainer get() = this
+
     fun initialize(context: Context) {
         applicationContext = context.applicationContext
     }
@@ -79,8 +83,8 @@ object AppContainer {
         AuthRepository(authApiService, tokenManager)
     }
     
-    val auctionRepository: AuctionRepository by lazy {
-        AuctionRepository(auctionApiService)
+    val auctionRepository: MockAuctionRepository by lazy {
+        MockAuctionRepository()
     }
     
     val bidWebSocketClient: BidWebSocketClient by lazy {

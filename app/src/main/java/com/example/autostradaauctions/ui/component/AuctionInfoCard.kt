@@ -13,12 +13,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.autostradaauctions.data.model.Auction
+import com.example.autostradaauctions.data.model.AuctionDetail
 import java.text.NumberFormat
 import java.util.*
 
 @Composable
 fun AuctionInfoCard(
-    auction: Auction,
+    auction: AuctionDetail,
     modifier: Modifier = Modifier
 ) {
     val formatter = NumberFormat.getCurrencyInstance(Locale.US)
@@ -99,11 +100,10 @@ fun AuctionInfoCard(
             
             Spacer(modifier = Modifier.height(20.dp))
             
-            // Auction Timing
-            AuctionTimingSection(
-                startTime = auction.startTime,
+            // Countdown Timer
+            CountdownTimer(
                 endTime = auction.endTime,
-                status = auction.status
+                modifier = Modifier.fillMaxWidth()
             )
             
             Spacer(modifier = Modifier.height(16.dp))
