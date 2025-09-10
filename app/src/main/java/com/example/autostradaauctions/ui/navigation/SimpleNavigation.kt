@@ -5,9 +5,13 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.autostradaauctions.ui.screens.SimpleHomeScreen
+import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import com.example.autostradaauctions.ui.screens.HomeScreen
 import com.example.autostradaauctions.ui.screens.EnhancedAuctionDetailScreen
-import com.example.autostradaauctions.ui.screens.SimpleLoginScreen
 import com.example.autostradaauctions.ui.screens.EnhancedLoginScreen
 import com.example.autostradaauctions.ui.screens.UserProfileScreen
 import com.example.autostradaauctions.ui.screens.FavoritesScreen
@@ -21,12 +25,19 @@ fun SimpleNavigation(
         startDestination = "home"
     ) {
         composable("home") {
-            SimpleHomeScreen(
+            HomeScreen(
                 onAuctionClick = { auctionId ->
-                    navController.navigate("auction_detail/$auctionId")
+                    println("DEBUG: Navigation triggered for auction ID: $auctionId")
+                    try {
+                        navController.navigate("auction_detail/$auctionId")
+                        println("DEBUG: Navigation successful")
+                    } catch (e: Exception) {
+                        println("DEBUG: Navigation failed: ${e.message}")
+                    }
                 },
                 onLoginClick = {
-                    navController.navigate("enhanced_login")
+                    println("DEBUG: Login clicked - navigating to test")
+                    navController.navigate("test")
                 },
                 onProfileClick = {
                     navController.navigate("profile")
@@ -36,64 +47,63 @@ fun SimpleNavigation(
                 }
             )
         }
-
+        
         composable("auction_detail/{auctionId}") { backStackEntry ->
             val auctionId = backStackEntry.arguments?.getString("auctionId") ?: ""
+            println("DEBUG: Entered auction detail screen with ID: $auctionId")
             EnhancedAuctionDetailScreen(
                 auctionId = auctionId,
                 onBackClick = {
+                    println("DEBUG: Back button clicked")
                     navController.popBackStack()
                 }
             )
         }
-
-        // Legacy login screen for backward compatibility
-        composable("login") {
-            SimpleLoginScreen(
-                onLoginSuccess = {
-                    navController.popBackStack("home", inclusive = false)
-                },
-                onBackClick = {
-                    navController.popBackStack()
-                }
-            )
-        }
-
-        // Enhanced authentication screens
+        
         composable("enhanced_login") {
             EnhancedLoginScreen(
-                onLoginSuccess = {
-                    navController.popBackStack("home", inclusive = false)
-                },
-                onNavigateToRegister = {
-                    // For now, stay on login screen - register can be added later
-                },
                 onBackClick = {
                     navController.popBackStack()
+                },
+                onLoginSuccess = {
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = true }
+                    }
                 }
             )
         }
-
+        
         composable("profile") {
             UserProfileScreen(
                 onBackClick = {
                     navController.popBackStack()
                 },
                 onLogout = {
-                    navController.popBackStack("home", inclusive = false)
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = true }
+                    }
                 }
             )
         }
-
+        
         composable("favorites") {
             FavoritesScreen(
-                onAuctionClick = { auctionId ->
-                    navController.navigate("auction_detail/$auctionId")
-                },
                 onBackClick = {
                     navController.popBackStack()
+                },
+                onAuctionClick = { auctionId ->
+                    navController.navigate("auction_detail/$auctionId")
                 }
             )
+        }
+        
+        composable("test") {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("TEST SCREEN - NAVIGATION IS WORKING!")
+            }
         }
     }
 }

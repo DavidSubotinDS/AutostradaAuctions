@@ -4,6 +4,7 @@ using AutostradaAuctions.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AutostradaAuctions.Api.Migrations
 {
     [DbContext(typeof(AuctionDbContext))]
-    partial class AuctionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250910000559_UpdateModels")]
+    partial class UpdateModels
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -192,7 +195,7 @@ namespace AutostradaAuctions.Api.Migrations
                             Id = 1,
                             Address = "",
                             City = "",
-                            CreatedAt = new DateTime(2025, 9, 10, 0, 8, 26, 908, DateTimeKind.Utc).AddTicks(9087),
+                            CreatedAt = new DateTime(2025, 9, 10, 0, 5, 57, 301, DateTimeKind.Utc).AddTicks(8194),
                             DateOfBirth = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "admin@autostrada.com",
                             FirstName = "Admin",
@@ -274,7 +277,7 @@ namespace AutostradaAuctions.Api.Migrations
                         {
                             Id = 1,
                             Color = "Pearl White",
-                            CreatedAt = new DateTime(2025, 9, 10, 0, 8, 26, 909, DateTimeKind.Utc).AddTicks(6526),
+                            CreatedAt = new DateTime(2025, 9, 10, 0, 5, 57, 303, DateTimeKind.Utc).AddTicks(6105),
                             Description = "Pristine Tesla Model S with Autopilot, premium interior, and full self-driving capability.",
                             FuelType = "Electric",
                             ImageUrls = "[]",
@@ -289,7 +292,7 @@ namespace AutostradaAuctions.Api.Migrations
                         {
                             Id = 2,
                             Color = "Alpine White",
-                            CreatedAt = new DateTime(2025, 9, 10, 0, 8, 26, 909, DateTimeKind.Utc).AddTicks(6694),
+                            CreatedAt = new DateTime(2025, 9, 10, 0, 5, 57, 303, DateTimeKind.Utc).AddTicks(6437),
                             Description = "High-performance BMW M3 with carbon fiber package and track-ready suspension.",
                             FuelType = "Gasoline",
                             ImageUrls = "[]",
