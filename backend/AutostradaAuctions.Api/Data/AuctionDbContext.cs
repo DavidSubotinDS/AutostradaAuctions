@@ -68,7 +68,7 @@ namespace AutostradaAuctions.Api.Data
                 entity.HasOne(e => e.WinningBid)
                     .WithMany()
                     .HasForeignKey(e => e.WinningBidId)
-                    .OnDelete(DeleteBehavior.SetNull);
+                    .OnDelete(DeleteBehavior.NoAction);
             });
 
             // Bid entity configuration
@@ -98,6 +98,9 @@ namespace AutostradaAuctions.Api.Data
 
         private void SeedData(ModelBuilder modelBuilder)
         {
+            // Fixed datetime for seed data
+            var seedDate = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
             // Seed admin user
             modelBuilder.Entity<User>().HasData(
                 new User
@@ -106,10 +109,23 @@ namespace AutostradaAuctions.Api.Data
                     FirstName = "Admin",
                     LastName = "User",
                     Email = "admin@autostrada.com",
-                    PasswordHash = "$2a$11$Xk1wLU8FaP6nWaHbYFDHYeWW4dHQoZ8CzOtK5.KzYYzLZdKy9gWxy", // password: admin123
+                    Username = "admin123",
+                    PasswordHash = "$2a$11$wiAQrFy99wpavWH3alOxku8emSuSu4hJX6Zd8yOdnJAeXH5qr/bDe", // password: "password"
                     Role = UserRole.Admin,
                     IsEmailVerified = true,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = seedDate
+                },
+                new User
+                {
+                    Id = 2,
+                    FirstName = "Regular",
+                    LastName = "User",
+                    Email = "user@autostrada.com",
+                    Username = "user123",
+                    PasswordHash = "$2a$11$wiAQrFy99wpavWH3alOxku8emSuSu4hJX6Zd8yOdnJAeXH5qr/bDe", // password: "password"
+                    Role = UserRole.Buyer,
+                    IsEmailVerified = true,
+                    CreatedAt = seedDate
                 }
             );
 
@@ -127,7 +143,7 @@ namespace AutostradaAuctions.Api.Data
                     FuelType = "Electric",
                     Transmission = "Automatic",
                     Description = "Pristine Tesla Model S with Autopilot, premium interior, and full self-driving capability.",
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = seedDate
                 },
                 new Vehicle
                 {
@@ -141,7 +157,7 @@ namespace AutostradaAuctions.Api.Data
                     FuelType = "Gasoline",
                     Transmission = "Manual",
                     Description = "High-performance BMW M3 with carbon fiber package and track-ready suspension.",
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = seedDate
                 }
             );
         }

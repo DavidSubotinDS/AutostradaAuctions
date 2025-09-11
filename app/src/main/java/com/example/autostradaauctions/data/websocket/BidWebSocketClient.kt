@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 class BidWebSocketClient {
     companion object {
         private const val TAG = "BidWebSocketClient"
-        private const val HUB_URL = "http://10.0.2.2:5000/biddingHub" // Android emulator localhost
+        private const val HUB_URL = "http://10.0.2.2:5117/biddingHub" // Android emulator localhost
     }
 
     private var hubConnection: HubConnection? = null

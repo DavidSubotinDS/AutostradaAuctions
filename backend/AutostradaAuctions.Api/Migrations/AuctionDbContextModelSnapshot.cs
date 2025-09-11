@@ -174,6 +174,11 @@ namespace AutostradaAuctions.Api.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<string>("ZipCode")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -192,17 +197,37 @@ namespace AutostradaAuctions.Api.Migrations
                             Id = 1,
                             Address = "",
                             City = "",
-                            CreatedAt = new DateTime(2025, 9, 10, 0, 8, 26, 908, DateTimeKind.Utc).AddTicks(9087),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DateOfBirth = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "admin@autostrada.com",
                             FirstName = "Admin",
                             IsActive = true,
                             IsEmailVerified = true,
                             LastName = "User",
-                            PasswordHash = "$2a$11$Xk1wLU8FaP6nWaHbYFDHYeWW4dHQoZ8CzOtK5.KzYYzLZdKy9gWxy",
+                            PasswordHash = "$2a$11$wiAQrFy99wpavWH3alOxku8emSuSu4hJX6Zd8yOdnJAeXH5qr/bDe",
                             PhoneNumber = "",
                             Role = 3,
                             State = "",
+                            Username = "admin123",
+                            ZipCode = ""
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Address = "",
+                            City = "",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DateOfBirth = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Email = "user@autostrada.com",
+                            FirstName = "Regular",
+                            IsActive = true,
+                            IsEmailVerified = true,
+                            LastName = "User",
+                            PasswordHash = "$2a$11$wiAQrFy99wpavWH3alOxku8emSuSu4hJX6Zd8yOdnJAeXH5qr/bDe",
+                            PhoneNumber = "",
+                            Role = 1,
+                            State = "",
+                            Username = "user123",
                             ZipCode = ""
                         });
                 });
@@ -274,7 +299,7 @@ namespace AutostradaAuctions.Api.Migrations
                         {
                             Id = 1,
                             Color = "Pearl White",
-                            CreatedAt = new DateTime(2025, 9, 10, 0, 8, 26, 909, DateTimeKind.Utc).AddTicks(6526),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Pristine Tesla Model S with Autopilot, premium interior, and full self-driving capability.",
                             FuelType = "Electric",
                             ImageUrls = "[]",
@@ -289,7 +314,7 @@ namespace AutostradaAuctions.Api.Migrations
                         {
                             Id = 2,
                             Color = "Alpine White",
-                            CreatedAt = new DateTime(2025, 9, 10, 0, 8, 26, 909, DateTimeKind.Utc).AddTicks(6694),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "High-performance BMW M3 with carbon fiber package and track-ready suspension.",
                             FuelType = "Gasoline",
                             ImageUrls = "[]",
@@ -319,7 +344,7 @@ namespace AutostradaAuctions.Api.Migrations
                     b.HasOne("AutostradaAuctions.Api.Models.Bid", "WinningBid")
                         .WithMany()
                         .HasForeignKey("WinningBidId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("Seller");
 

@@ -82,8 +82,8 @@ class EnhancedLoginViewModel(
     
     private fun validateEmail(email: String): String? {
         return when {
-            email.isBlank() -> "Email is required"
-            !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() -> "Invalid email format"
+            email.isBlank() -> "Username or email is required"
+            email.length < 3 -> "Username or email must be at least 3 characters"
             else -> null
         }
     }

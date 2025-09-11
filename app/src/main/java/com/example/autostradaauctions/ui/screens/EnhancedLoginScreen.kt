@@ -26,11 +26,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.autostradaauctions.ui.viewmodel.EnhancedLoginViewModel
 import com.example.autostradaauctions.ui.viewmodel.EnhancedLoginViewModelFactory
 import com.example.autostradaauctions.di.AppContainer
+import com.example.autostradaauctions.data.model.UserSession
+import com.example.autostradaauctions.data.model.UserRole
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EnhancedLoginScreen(
-    onLoginSuccess: () -> Unit,
+    onLoginSuccess: (UserSession) -> Unit,
     onNavigateToRegister: () -> Unit = {},
     onBackClick: (() -> Unit)? = null
 ) {
@@ -47,7 +49,17 @@ fun EnhancedLoginScreen(
     // Handle login success
     LaunchedEffect(uiState.isLoggedIn) {
         if (uiState.isLoggedIn) {
-            onLoginSuccess()
+            // Create a mock user session for now
+            val mockUserSession = UserSession(
+                id = 1,
+                username = uiState.email,
+                email = uiState.email,
+                firstName = "User",
+                lastName = "Test",
+                role = if (uiState.email.contains("admin")) UserRole.ADMIN else UserRole.BUYER,
+                isActive = true
+            )
+            onLoginSuccess(mockUserSession)
         }
     }
     
@@ -109,16 +121,16 @@ fun EnhancedLoginScreen(
                 Column(
                     modifier = Modifier.padding(24.dp)
                 ) {
-                    // Email Field
+                    // Username/Email Field
                     OutlinedTextField(
                         value = uiState.email,
                         onValueChange = viewModel::updateEmail,
-                        label = { Text("Email") },
+                        label = { Text("Username or Email") },
                         leadingIcon = {
-                            Icon(Icons.Default.Email, contentDescription = null)
+                            Icon(Icons.Default.Person, contentDescription = null)
                         },
                         keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Email,
+                            keyboardType = KeyboardType.Text,
                             imeAction = ImeAction.Next
                         ),
                         keyboardActions = KeyboardActions(

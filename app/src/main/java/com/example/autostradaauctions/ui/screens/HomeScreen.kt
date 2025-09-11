@@ -107,65 +107,36 @@ fun HomeScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Make Filter with typing support
+            // Make Filter - Simple dropdown selection only
             Box(modifier = Modifier.weight(1f)) {
                 var expanded by remember { mutableStateOf(false) }
-                var makeSearchText by remember { mutableStateOf("") }
-                
-                // Filter makes based on search text
-                val filteredMakes = remember(uiState.availableMakes, makeSearchText) {
-                    if (makeSearchText.isEmpty()) {
-                        uiState.availableMakes
-                    } else {
-                        uiState.availableMakes.filter { 
-                            it.contains(makeSearchText, ignoreCase = true)
-                        }
-                    }
-                }
                 
                 OutlinedTextField(
-                    value = if (expanded) makeSearchText else uiState.selectedMake,
-                    onValueChange = { value ->
-                        if (expanded) {
-                            makeSearchText = value
-                        }
-                    },
+                    value = uiState.selectedMake,
+                    onValueChange = { }, // No text input allowed
                     label = { Text("Make") },
-                    readOnly = false,
+                    readOnly = true,
                     trailingIcon = {
                         Icon(
-                            Icons.Default.ArrowDropDown, 
-                            contentDescription = "Expand",
-                            modifier = Modifier.clickable { 
-                                expanded = !expanded
-                                if (expanded) {
-                                    makeSearchText = ""
-                                }
-                            }
+                            if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.ArrowDropDown,
+                            contentDescription = if (expanded) "Collapse" else "Expand"
                         )
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { 
-                            expanded = true
-                            makeSearchText = ""
-                        }
+                        .clickable { expanded = !expanded }
                 )
                 
                 DropdownMenu(
                     expanded = expanded,
-                    onDismissRequest = { 
-                        expanded = false
-                        makeSearchText = ""
-                    }
+                    onDismissRequest = { expanded = false }
                 ) {
-                    filteredMakes.forEach { make ->
+                    uiState.availableMakes.forEach { make ->
                         DropdownMenuItem(
                             text = { Text(make) },
                             onClick = {
                                 viewModel.updateSelectedMake(make)
                                 expanded = false
-                                makeSearchText = ""
                             }
                         )
                     }

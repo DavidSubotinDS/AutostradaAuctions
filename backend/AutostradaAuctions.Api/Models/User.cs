@@ -20,6 +20,10 @@ namespace AutostradaAuctions.Api.Models
         public string Email { get; set; } = string.Empty;
 
         [Required]
+        [StringLength(50)]
+        public string Username { get; set; } = string.Empty;
+
+        [Required]
         public string PasswordHash { get; set; } = string.Empty;
 
         [StringLength(20)]

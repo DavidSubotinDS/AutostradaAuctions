@@ -22,6 +22,7 @@ namespace AutostradaAuctions.Api.Migrations
                     FirstName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     LastName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Email = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    Username = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     PasswordHash = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     PhoneNumber = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     DateOfBirth = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -129,16 +130,20 @@ namespace AutostradaAuctions.Api.Migrations
 
             migrationBuilder.InsertData(
                 table: "Users",
-                columns: new[] { "Id", "Address", "City", "CreatedAt", "DateOfBirth", "Email", "FirstName", "IsActive", "IsEmailVerified", "LastName", "PasswordHash", "PhoneNumber", "Role", "State", "ZipCode" },
-                values: new object[] { 1, "", "", new DateTime(2025, 9, 8, 15, 2, 57, 10, DateTimeKind.Utc).AddTicks(715), new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "admin@autostrada.com", "Admin", true, true, "User", "$2a$11$Xk1wLU8FaP6nWaHbYFDHYeWW4dHQoZ8CzOtK5.KzYYzLZdKy9gWxy", "", 3, "", "" });
+                columns: new[] { "Id", "Address", "City", "CreatedAt", "DateOfBirth", "Email", "FirstName", "IsActive", "IsEmailVerified", "LastName", "PasswordHash", "PhoneNumber", "Role", "State", "Username", "ZipCode" },
+                values: new object[,]
+                {
+                    { 1, "", "", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "admin@autostrada.com", "Admin", true, true, "User", "$2a$11$7aS8K6MX/7nfTJC0Vw9Nku.DcLy0rJPkrW8rHoY8JfR9g3aWp.yMe", "", 3, "", "admin123", "" },
+                    { 2, "", "", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "user@autostrada.com", "Regular", true, true, "User", "$2a$11$7aS8K6MX/7nfTJC0Vw9Nku.DcLy0rJPkrW8rHoY8JfR9g3aWp.yMe", "", 1, "", "user123", "" }
+                });
 
             migrationBuilder.InsertData(
                 table: "Vehicles",
                 columns: new[] { "Id", "Color", "CreatedAt", "Description", "FuelType", "ImageUrls", "Make", "Mileage", "Model", "Transmission", "VIN", "Year" },
                 values: new object[,]
                 {
-                    { 1, "Pearl White", new DateTime(2025, 9, 8, 15, 2, 57, 10, DateTimeKind.Utc).AddTicks(7887), "Pristine Tesla Model S with Autopilot, premium interior, and full self-driving capability.", "Electric", "[]", "Tesla", 15000, "Model S", "Automatic", "5YJSA1E20MF000001", 2023 },
-                    { 2, "Alpine White", new DateTime(2025, 9, 8, 15, 2, 57, 10, DateTimeKind.Utc).AddTicks(8089), "High-performance BMW M3 with carbon fiber package and track-ready suspension.", "Gasoline", "[]", "BMW", 8500, "M3", "Manual", "WBS8M9C59N5000002", 2022 }
+                    { 1, "Pearl White", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Pristine Tesla Model S with Autopilot, premium interior, and full self-driving capability.", "Electric", "[]", "Tesla", 15000, "Model S", "Automatic", "5YJSA1E20MF000001", 2023 },
+                    { 2, "Alpine White", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "High-performance BMW M3 with carbon fiber package and track-ready suspension.", "Gasoline", "[]", "BMW", 8500, "M3", "Manual", "WBS8M9C59N5000002", 2022 }
                 });
 
             migrationBuilder.CreateIndex(
@@ -183,8 +188,7 @@ namespace AutostradaAuctions.Api.Migrations
                 table: "Auctions",
                 column: "WinningBidId",
                 principalTable: "Bids",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.SetNull);
+                principalColumn: "Id");
         }
 
         /// <inheritdoc />
