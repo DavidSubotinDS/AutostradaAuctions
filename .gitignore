@@ -13,3 +13,76 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Android build outputs
+/app/build/
+**/build/
+*.apk
+*.aab
+*.dex
+*.class
+
+# Generated files
+bin/
+gen/
+out/
+release/
+
+# Gradle files
+.gradle/
+build/
+gradle-app.setting
+!gradle-wrapper.jar
+!gradle-wrapper.properties
+
+# Local configuration files
+local.properties
+gradle.properties
+!gradle/wrapper/gradle-wrapper.properties
+
+# Log Files
+*.log
+
+# Android Studio
+*.iws
+.idea/
+!.idea/codeStyles/
+!.idea/inspectionProfiles/
+!.idea/runConfigurations/
+!.idea/copyright/
+!.idea/scopes/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Keystore files
+*.jks
+*.keystore
+
+# External native build
+.externalNativeBuild/
+.cxx/
+
+# Google Services
+google-services.json
+!app/google-services.json
+
+# Freeline
+freeline.py
+freeline/
+freeline_project_description.json
+
+# .NET Core / .NET 5+ build outputs
+backend/*/bin/
+backend/*/obj/
+backend/*/*.user
+backend/*/*.suo
+backend/*/*.sln.docstates
+backend/*/packages/
+backend/*/.vs/

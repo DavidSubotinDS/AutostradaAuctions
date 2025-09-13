@@ -8,7 +8,7 @@ import com.example.autostradaauctions.BuildConfig
 object AppConfig {
     
     // API Configuration
-    const val BASE_URL = "http://10.0.2.2:5117/api/"  // Android emulator localhost
+    const val BASE_URL = "http://10.0.2.2:5000/api/"  // Android emulator localhost
     const val SIGNALR_HUB_URL = "http://10.0.2.2:5001/biddingHub"
     
     // Network Configuration

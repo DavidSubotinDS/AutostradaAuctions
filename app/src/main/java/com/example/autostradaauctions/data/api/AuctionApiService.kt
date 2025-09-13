@@ -26,5 +26,5 @@ interface AuctionApiService {
 object ApiConfig {
     // For Android emulator, use 10.0.2.2 to access localhost
     // For physical device on same network, use your computer's IP address
-    const val BASE_URL = "http://10.0.2.2:5117/"
+    const val BASE_URL = "http://10.0.2.2:5000/"
 }
