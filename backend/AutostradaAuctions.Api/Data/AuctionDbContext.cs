@@ -12,6 +12,7 @@ namespace AutostradaAuctions.Api.Data
         public DbSet<Vehicle> Vehicles { get; set; }
         public DbSet<Auction> Auctions { get; set; }
         public DbSet<Bid> Bids { get; set; }
+        public DbSet<UserFavorite> UserFavorites { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -92,6 +93,26 @@ namespace AutostradaAuctions.Api.Data
                 entity.HasIndex(e => new { e.AuctionId, e.Amount });
             });
 
+            // UserFavorite entity configuration
+            modelBuilder.Entity<UserFavorite>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                // Relationships
+                entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Auction)
+                    .WithMany()
+                    .HasForeignKey(e => e.AuctionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Unique constraint to prevent duplicate favorites
+                entity.HasIndex(e => new { e.UserId, e.AuctionId }).IsUnique();
+            });
+
             // Seed data
             SeedData(modelBuilder);
         }
@@ -158,6 +179,87 @@ namespace AutostradaAuctions.Api.Data
                     Transmission = "Manual",
                     Description = "High-performance BMW M3 with carbon fiber package and track-ready suspension.",
                     CreatedAt = seedDate
+                },
+                new Vehicle
+                {
+                    Id = 3,
+                    Make = "Mercedes-Benz",
+                    Model = "AMG GT",
+                    Year = 2023,
+                    Color = "Obsidian Black",
+                    VIN = "WDDYK7HA2JA000003",
+                    Mileage = 5200,
+                    FuelType = "Gasoline",
+                    Transmission = "Automatic",
+                    Description = "Luxury sports car with handcrafted AMG engine and premium leather interior.",
+                    CreatedAt = seedDate
+                }
+            );
+
+            // Seed sample auctions (using higher IDs to avoid conflicts)
+            modelBuilder.Entity<Auction>().HasData(
+                new Auction
+                {
+                    Id = 10,
+                    Title = "2023 Tesla Model S - Premium Electric Sedan",
+                    Description = "Experience the future of driving with this pristine Tesla Model S featuring Autopilot, premium interior, and full self-driving capability.",
+                    VehicleId = 1,
+                    SellerId = 2,
+                    StartingPrice = 75000,
+                    ReservePrice = 85000,
+                    CurrentBid = 75000,
+                    StartTime = seedDate.AddDays(1),
+                    EndTime = seedDate.AddDays(8),
+                    Status = AuctionStatus.Scheduled,
+                    CreatedAt = seedDate
+                },
+                new Auction
+                {
+                    Id = 11,
+                    Title = "2022 BMW M3 - Track-Ready Performance",
+                    Description = "High-performance BMW M3 with carbon fiber package, track-ready suspension, and manual transmission for the driving purist.",
+                    VehicleId = 2,
+                    SellerId = 2,
+                    StartingPrice = 65000,
+                    ReservePrice = 72000,
+                    CurrentBid = 67500,
+                    StartTime = seedDate,
+                    EndTime = seedDate.AddDays(7),
+                    Status = AuctionStatus.Active,
+                    CreatedAt = seedDate
+                },
+                new Auction
+                {
+                    Id = 12,
+                    Title = "2023 Mercedes-AMG GT - Luxury Sports Car",
+                    Description = "Stunning luxury sports car with handcrafted AMG engine, premium leather interior, and cutting-edge technology.",
+                    VehicleId = 3,
+                    SellerId = 2,
+                    StartingPrice = 95000,
+                    ReservePrice = 105000,
+                    CurrentBid = 95000,
+                    StartTime = seedDate.AddDays(2),
+                    EndTime = seedDate.AddDays(9),
+                    Status = AuctionStatus.Scheduled,
+                    CreatedAt = seedDate
+                }
+            );
+
+            // Seed sample user favorites
+            modelBuilder.Entity<UserFavorite>().HasData(
+                new UserFavorite
+                {
+                    Id = 1,
+                    UserId = 1, // Admin user
+                    AuctionId = 11, // BMW M3
+                    CreatedAt = seedDate
+                },
+                new UserFavorite
+                {
+                    Id = 2,
+                    UserId = 1, // Admin user
+                    AuctionId = 12, // Mercedes-AMG GT
+                    CreatedAt = seedDate.AddHours(1)
                 }
             );
         }
