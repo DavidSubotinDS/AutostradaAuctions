@@ -18,6 +18,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.autostradaauctions.data.model.Auction
+import com.example.autostradaauctions.data.model.UserRole
 import com.example.autostradaauctions.ui.viewmodel.HomeViewModel
 import java.text.NumberFormat
 import java.util.*
@@ -29,6 +30,8 @@ fun HomeScreen(
     onLoginClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
     onFavoritesClick: () -> Unit = {},
+    onAnalyticsClick: () -> Unit = {},
+    currentUserRole: UserRole? = null,
     viewModel: HomeViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -63,6 +66,15 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Analytics button for admin users only
+                if (currentUserRole == UserRole.ADMIN) {
+                    IconButton(onClick = onAnalyticsClick) {
+                        Icon(
+                            imageVector = Icons.Default.Analytics,
+                            contentDescription = "Analytics"
+                        )
+                    }
+                }
                 IconButton(onClick = onFavoritesClick) {
                     Icon(
                         imageVector = Icons.Default.Favorite,
