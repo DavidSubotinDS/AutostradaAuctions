@@ -5,11 +5,14 @@ import com.example.autostradaauctions.data.api.AuctionApiService
 import com.example.autostradaauctions.data.api.AuthApiService
 import com.example.autostradaauctions.data.api.ApiConfig
 import com.example.autostradaauctions.data.auth.TokenManager
+import com.example.autostradaauctions.data.model.UserRole
 import com.example.autostradaauctions.data.repository.AuctionRepository
 import com.example.autostradaauctions.data.repository.MockAuctionRepository
 import com.example.autostradaauctions.data.repository.AuthRepository
 import com.example.autostradaauctions.data.repository.BiddingRepository
+import com.example.autostradaauctions.data.serialization.UserRoleAdapter
 import com.example.autostradaauctions.data.websocket.BidWebSocketClient
+import com.google.gson.GsonBuilder
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -20,13 +23,17 @@ import java.util.concurrent.TimeUnit
 object AppContainer {
     
     private lateinit var applicationContext: Context
+    private var isInitialized = false
     
     // Add instance property for singleton access
     val instance: AppContainer get() = this
 
     fun initialize(context: Context) {
         applicationContext = context.applicationContext
+        isInitialized = true
     }
+    
+    fun isAppContainerInitialized(): Boolean = isInitialized
     
     val tokenManager: TokenManager by lazy {
         TokenManager(applicationContext)
@@ -64,10 +71,14 @@ object AppContainer {
     }
     
     private val retrofit: Retrofit by lazy {
+        val gson = GsonBuilder()
+            .registerTypeAdapter(UserRole::class.java, UserRoleAdapter())
+            .create()
+            
         Retrofit.Builder()
             .baseUrl(ApiConfig.BASE_URL)
             .client(httpClient)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
     }
     

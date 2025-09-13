@@ -7,7 +7,7 @@ data class User(
     val email: String,
     val phone: String? = null,
     val profileImageUrl: String? = null,
-    val role: UserRole,
+    val role: UserRole?,
     val isEmailVerified: Boolean = false,
     val createdAt: String,
     val lastLoginAt: String? = null,
@@ -26,8 +26,19 @@ data class UserPreferences(
 
 enum class UserRole {
     BUYER,
-    SELLER,
-    ADMIN
+    SELLER, 
+    ADMIN;
+    
+    companion object {
+        fun fromString(value: String?): UserRole? {
+            return when (value?.uppercase()) {
+                "BUYER" -> BUYER
+                "SELLER" -> SELLER
+                "ADMIN" -> ADMIN
+                else -> null
+            }
+        }
+    }
 }
 
 data class LoginRequest(

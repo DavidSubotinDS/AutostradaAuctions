@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -14,6 +16,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -32,6 +35,82 @@ fun UserProfileScreen(
     onNavigateToFavorites: () -> Unit = {},
     onNavigateToBidHistory: () -> Unit = {}
 ) {
+    // Check authentication first
+    val isLoggedIn by AppContainer.authRepository.isLoggedIn.collectAsStateWithLifecycle()
+    
+    if (!isLoggedIn) {
+        // Show not authenticated screen
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            TopAppBar(
+                title = { Text("Profile") },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
+            
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = null,
+                        modifier = Modifier.size(64.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Please log in to view your profile",
+                        style = MaterialTheme.typography.titleMedium,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Sign in to access your profile and account settings",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Button(onClick = onBackClick) {
+                        Text("Go Back")
+                    }
+                }
+            }
+        }
+        return
+    }
+    
+    // Check if AppContainer is initialized before creating ViewModel
+    if (!AppContainer.isAppContainerInitialized()) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "App is initializing...",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(onClick = onBackClick) {
+                    Text("Go Back")
+                }
+            }
+        }
+        return
+    }
+    
     val viewModel: UserProfileViewModel = viewModel(
         factory = UserProfileViewModelFactory(
             AppContainer.authRepository
@@ -51,7 +130,7 @@ fun UserProfileScreen(
             title = { Text("Profile") },
             navigationIcon = {
                 IconButton(onClick = onBackClick) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                 }
             },
             actions = {
@@ -192,21 +271,23 @@ private fun UserInfoSection(
             Spacer(modifier = Modifier.height(16.dp))
             
             // Role Badge
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = when (user.role) {
-                        com.example.autostradaauctions.data.model.UserRole.ADMIN -> MaterialTheme.colorScheme.errorContainer
-                        com.example.autostradaauctions.data.model.UserRole.SELLER -> MaterialTheme.colorScheme.primaryContainer
-                        else -> MaterialTheme.colorScheme.secondaryContainer
-                    }
-                )
-            ) {
-                Text(
-                    text = user.role.name,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Medium
-                )
+            user.role?.let { role ->
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = when (role) {
+                            com.example.autostradaauctions.data.model.UserRole.ADMIN -> MaterialTheme.colorScheme.errorContainer
+                            com.example.autostradaauctions.data.model.UserRole.SELLER -> MaterialTheme.colorScheme.primaryContainer
+                            else -> MaterialTheme.colorScheme.secondaryContainer
+                        }
+                    )
+                ) {
+                    Text(
+                        text = role.name,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
             
             Spacer(modifier = Modifier.height(16.dp))
@@ -362,7 +443,7 @@ private fun AccountActionsSection(
             Spacer(modifier = Modifier.height(16.dp))
             
             ProfileMenuItem(
-                icon = Icons.Default.Logout,
+                icon = Icons.AutoMirrored.Filled.Logout,
                 title = "Sign Out",
                 subtitle = "Sign out of your account",
                 onClick = onLogout,
