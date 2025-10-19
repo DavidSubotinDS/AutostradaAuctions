@@ -2,11 +2,11 @@ package com.example.autostradaauctions.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.example.autostradaauctions.data.repository.MockAuctionRepository
+import com.example.autostradaauctions.data.repository.AuctionRepository
 import com.example.autostradaauctions.data.repository.BiddingRepository
 
 class EnhancedAuctionDetailViewModelFactory(
-    private val auctionRepository: MockAuctionRepository,
+    private val auctionRepository: AuctionRepository,
     private val biddingRepository: BiddingRepository? = null
 ) : ViewModelProvider.Factory {
     

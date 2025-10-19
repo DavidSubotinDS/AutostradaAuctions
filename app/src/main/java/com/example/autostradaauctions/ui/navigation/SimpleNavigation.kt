@@ -17,12 +17,13 @@ import com.example.autostradaauctions.ui.screens.EnhancedAuctionDetailScreen
 import com.example.autostradaauctions.ui.screens.EnhancedLoginScreen
 import com.example.autostradaauctions.ui.screens.UserProfileScreen
 import com.example.autostradaauctions.ui.screens.FavoritesScreen
-import com.example.autostradaauctions.ui.screens.AdminDashboardScreen
 import com.example.autostradaauctions.ui.screens.UserDashboardScreen
-import com.example.autostradaauctions.ui.screens.AuctionManagementScreen
-import com.example.autostradaauctions.ui.screens.UserManagementScreen
-import com.example.autostradaauctions.ui.screens.AnalyticsScreen
 import com.example.autostradaauctions.ui.screens.MyBidsScreen
+import com.example.autostradaauctions.ui.screens.AuctionSubmissionScreen
+import com.example.autostradaauctions.ui.screens.AdvancedSearchScreen
+import com.example.autostradaauctions.ui.admin.AdminDashboardScreen
+import com.example.autostradaauctions.ui.admin.AdminUsersScreen
+import com.example.autostradaauctions.ui.admin.AuctionApprovalScreen
 import com.example.autostradaauctions.data.model.UserSession
 import com.example.autostradaauctions.data.model.UserRole
 
@@ -57,7 +58,17 @@ fun SimpleNavigation(
                 },
                 onFavoritesClick = {
                     navController.navigate("favorites")
-                }
+                },
+                onAnalyticsClick = {
+                    navController.navigate("admin_dashboard")
+                },
+                onSellClick = {
+                    navController.navigate("auction_submission")
+                },
+                onSearchClick = {
+                    navController.navigate("search")
+                },
+                currentUserRole = currentUser.value?.role
             )
         }
         
@@ -99,25 +110,16 @@ fun SimpleNavigation(
         
         composable("admin_dashboard") {
             AdminDashboardScreen(
-                onBackClick = {
+                onNavigateToUsers = {
+                    navController.navigate("admin_users")
+                },
+                onNavigateToAuctions = {
+                    navController.navigate("admin_auctions")
+                },
+                onNavigateBack = {
                     navController.navigate("home") {
                         popUpTo("home") { inclusive = true }
                     }
-                },
-                onLogout = {
-                    currentUser.value = null
-                    navController.navigate("home") {
-                        popUpTo("home") { inclusive = true }
-                    }
-                },
-                onManageAuctions = {
-                    navController.navigate("auction_management")
-                },
-                onManageUsers = {
-                    navController.navigate("user_management")
-                },
-                onViewAnalytics = {
-                    navController.navigate("analytics")
                 }
             )
         }
@@ -179,43 +181,25 @@ fun SimpleNavigation(
         }
         
         // Admin Management Screens
-        composable("auction_management") {
-            AuctionManagementScreen(
-                onBackClick = {
+        composable("admin_users") {
+            AdminUsersScreen(
+                onNavigateBack = {
                     navController.popBackStack()
-                },
-                onCreateAuction = {
-                    // TODO: Navigate to create auction screen
-                },
-                onEditAuction = { auctionId ->
-                    // TODO: Navigate to edit auction screen
-                },
-                onDeleteAuction = { auctionId ->
-                    // TODO: Handle auction deletion
                 }
             )
         }
         
-        composable("user_management") {
-            UserManagementScreen(
-                onBackClick = {
+        composable("admin_auctions") {
+            AuctionApprovalScreen(
+                onNavigateBack = {
                     navController.popBackStack()
-                },
-                onCreateUser = {
-                    // TODO: Navigate to create user screen
-                },
-                onEditUser = { userId ->
-                    // TODO: Navigate to edit user screen
-                },
-                onToggleUserStatus = { userId ->
-                    // TODO: Handle user status toggle
                 }
             )
         }
         
-        composable("analytics") {
-            AnalyticsScreen(
-                onBackClick = {
+        composable("auction_submission") {
+            AuctionSubmissionScreen(
+                onNavigateBack = {
                     navController.popBackStack()
                 }
             )
@@ -228,6 +212,17 @@ fun SimpleNavigation(
                     navController.popBackStack()
                 },
                 onViewAuction = { auctionId ->
+                    navController.navigate("auction_detail/$auctionId")
+                }
+            )
+        }
+        
+        composable("search") { navBackStackEntry ->
+            AdvancedSearchScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onAuctionClick = { auctionId ->
                     navController.navigate("auction_detail/$auctionId")
                 }
             )

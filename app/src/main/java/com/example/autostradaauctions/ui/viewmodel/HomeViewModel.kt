@@ -3,11 +3,14 @@ package com.example.autostradaauctions.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.autostradaauctions.data.model.Auction
-import com.example.autostradaauctions.data.repository.MockAuctionRepository
+import com.example.autostradaauctions.di.AppContainer
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.time.*
+import java.time.format.DateTimeFormatter
+import androidx.compose.ui.graphics.Color
 
 data class HomeUiState(
     val allAuctions: List<Auction> = emptyList(),
@@ -18,11 +21,15 @@ data class HomeUiState(
     val selectedMake: String = "All",
     val minPrice: Double? = null,
     val maxPrice: Double? = null,
-    val availableMakes: List<String> = emptyList()
+    val availableMakes: List<String> = emptyList(),
+    // New properties for enhanced home screen
+    val liveAuctionsCount: Int = 0,
+    val endingSoonCount: Int = 0,
+    val totalBidsCount: Int = 0
 )
 
 class HomeViewModel : ViewModel() {
-    private val repository = MockAuctionRepository()
+    private val repository = AppContainer.auctionRepository
     
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -39,11 +46,22 @@ class HomeViewModel : ViewModel() {
                 .onSuccess { auctions ->
                     val makes = listOf("All") + auctions.map { it.vehicle.make }.distinct().sorted()
                     
+                    // Calculate stats
+                    val liveAuctions = auctions.filter { 
+                        it.status.equals("active", ignoreCase = true) ||
+                        it.status.equals("scheduled", ignoreCase = true)
+                    }
+                    val endingSoon = liveAuctions.take(3) // For now, take first 3 as "ending soon"
+                    val totalBids = auctions.sumOf { it.currentBid.toInt() / 1000 } // Estimate based on bid values
+                    
                     _uiState.value = _uiState.value.copy(
                         allAuctions = auctions,
                         filteredAuctions = auctions,
                         availableMakes = makes,
-                        isLoading = false
+                        isLoading = false,
+                        liveAuctionsCount = liveAuctions.size,
+                        endingSoonCount = endingSoon.size,
+                        totalBidsCount = totalBids
                     )
                 }
                 .onFailure { exception ->
@@ -116,19 +134,45 @@ class HomeViewModel : ViewModel() {
     }
     
     fun calculateTimeLeft(endTime: String): String {
-        // For now, return a simple placeholder
-        // You can implement proper time calculation later
-        return "2h 30m"
+        return try {
+            // Handle both formats: "2025-10-29T11:36:32.5329009" and "2025-10-29T11:36:32"
+            val cleanEndTime = endTime.substringBefore('.')
+            val endDateTime = LocalDateTime.parse(
+                cleanEndTime, 
+                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+            )
+            val endInstant = endDateTime.atZone(ZoneId.systemDefault()).toInstant()
+            val now = Instant.now()
+            
+            val remaining = Duration.between(now, endInstant)
+            
+            when {
+                remaining.isNegative || remaining.isZero -> "Ended"
+                else -> {
+                    val days = remaining.toDays()
+                    val hours = remaining.toHours() % 24
+                    val minutes = remaining.toMinutes() % 60
+                    val seconds = remaining.seconds % 60
+                    
+                    // Always show full format: days, hours, minutes, seconds
+                    "${days}d ${hours}h ${minutes}m ${seconds}s"
+                }
+            }
+        } catch (e: Exception) {
+            // Debug log to see what's causing the parsing issue
+            println("DEBUG: Error parsing endTime '$endTime': ${e.message}")
+            "Unknown"
+        }
     }
     
-    fun getStatusColor(status: String): androidx.compose.ui.graphics.Color {
+    fun getStatusColor(status: String): Color {
         return when (status.lowercase()) {
-            "active" -> androidx.compose.ui.graphics.Color(0xFF4CAF50) // Green
-            "scheduled" -> androidx.compose.ui.graphics.Color(0xFF2196F3) // Blue
-            "ended" -> androidx.compose.ui.graphics.Color(0xFF9E9E9E) // Gray
-            "cancelled" -> androidx.compose.ui.graphics.Color(0xFFF44336) // Red
-            "sold" -> androidx.compose.ui.graphics.Color(0xFF9C27B0) // Purple
-            else -> androidx.compose.ui.graphics.Color(0xFF9E9E9E) // Gray
+            "active" -> Color(0xFF4CAF50) // Green
+            "scheduled" -> Color(0xFF2196F3) // Blue
+            "ended" -> Color(0xFF9E9E9E) // Gray
+            "cancelled" -> Color(0xFFF44336) // Red
+            "sold" -> Color(0xFF9C27B0) // Purple
+            else -> Color(0xFF9E9E9E) // Gray
         }
     }
 }

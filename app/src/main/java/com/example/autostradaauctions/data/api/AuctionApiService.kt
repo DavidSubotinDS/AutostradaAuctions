@@ -1,5 +1,6 @@
 package com.example.autostradaauctions.data.api
 
+import com.example.autostradaauctions.config.AppConfig
 import com.example.autostradaauctions.data.model.Auction
 import com.example.autostradaauctions.data.model.AuctionDetail
 import com.example.autostradaauctions.data.model.Bid
@@ -24,7 +25,6 @@ interface AuctionApiService {
 }
 
 object ApiConfig {
-    // For Android emulator, use 10.0.2.2 to access localhost
-    // For physical device on same network, use your computer's IP address
-    const val BASE_URL = "http://10.0.2.2:5000/"
+    // PERMANENT FIX: Use centralized AppConfig for consistent port management
+    val BASE_URL = AppConfig.BASE_URL.removeSuffix("/api/") + "/"
 }

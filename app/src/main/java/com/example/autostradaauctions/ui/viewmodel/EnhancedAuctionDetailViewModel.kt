@@ -5,14 +5,14 @@ import androidx.lifecycle.viewModelScope
 import com.example.autostradaauctions.data.model.Auction
 import com.example.autostradaauctions.data.model.AuctionDetail
 import com.example.autostradaauctions.data.model.Bid
-import com.example.autostradaauctions.data.repository.MockAuctionRepository
+import com.example.autostradaauctions.data.repository.AuctionRepository
 import com.example.autostradaauctions.data.repository.BiddingRepository
 import com.example.autostradaauctions.data.websocket.BidWebSocketClient
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class EnhancedAuctionDetailViewModel(
-    private val auctionRepository: MockAuctionRepository = MockAuctionRepository(),
+    private val auctionRepository: AuctionRepository,
     private val biddingRepository: BiddingRepository? = null
 ) : ViewModel() {
 
@@ -25,74 +25,136 @@ class EnhancedAuctionDetailViewModel(
     }
 
     private fun observeRealTimeUpdates() {
-        // Connect to real-time bidding if repository is available
-        biddingRepository?.connectToRealTimeBidding()
+        // Only initialize real-time updates if repository is available
+        if (biddingRepository == null) return
         
-        // Observe connection state
-        viewModelScope.launch {
-            biddingRepository?.connectionState?.collect { state ->
-                _uiState.update { it.copy(connectionState = state) }
-            }
+        // Connect to real-time bidding with error handling
+        try {
+            biddingRepository.connectToRealTimeBidding()
+        } catch (e: Exception) {
+            // Silently fail if real-time connection isn't available
+            return
         }
         
-        // Observe bid updates
+        // Observe connection state with distinctUntilChanged to prevent unnecessary updates
         viewModelScope.launch {
-            biddingRepository?.bidUpdates?.collect { newBid ->
-                _uiState.update { currentState ->
-                    val updatedBids = listOf(newBid) + currentState.bidHistory
-                    currentState.copy(
-                        bidHistory = updatedBids,
-                        lastBidUpdate = System.currentTimeMillis()
-                    )
-                }
-            }
-        }
-        
-        // Observe auction updates (current bid, status changes)
-        viewModelScope.launch {
-            biddingRepository?.auctionUpdates?.collect { update ->
-                _uiState.update { currentState ->
-                    if (currentState.auction?.id == update.auctionId) {
-                        currentState.copy(
-                            auction = currentState.auction?.copy(
-                                currentBid = update.currentBid ?: currentState.auction.currentBid,
-                                status = update.status ?: currentState.auction.status
-                            ),
-                            lastAuctionUpdate = System.currentTimeMillis()
-                        )
-                    } else {
-                        currentState
+            biddingRepository.connectionState
+                ?.distinctUntilChanged()
+                ?.collect { state ->
+                    _uiState.update { currentState ->
+                        if (currentState.connectionState != state) {
+                            currentState.copy(connectionState = state)
+                        } else {
+                            currentState
+                        }
                     }
                 }
-            }
+        }
+        
+        // Observe bid updates only for current auction
+        viewModelScope.launch {
+            biddingRepository.bidUpdates
+                ?.filter { _ -> 
+                    // Only process bids for the current auction
+                    _uiState.value.currentAuctionId != null
+                }
+                ?.distinctUntilChanged()
+                ?.collect { newBid ->
+                    _uiState.update { currentState ->
+                        // Avoid duplicate bids
+                        val existingBid = currentState.bidHistory.find { it.id == newBid.id }
+                        if (existingBid == null) {
+                            val updatedBids = listOf(newBid) + currentState.bidHistory
+                            currentState.copy(
+                                bidHistory = updatedBids,
+                                lastBidUpdate = System.currentTimeMillis()
+                            )
+                        } else {
+                            currentState
+                        }
+                    }
+                }
+        }
+        
+        // Observe auction updates with better filtering
+        viewModelScope.launch {
+            biddingRepository.auctionUpdates
+                ?.filter { update -> 
+                    // Only process updates for current auction
+                    _uiState.value.currentAuctionId == update.auctionId
+                }
+                ?.distinctUntilChanged()
+                ?.collect { update ->
+                    _uiState.update { currentState ->
+                        val currentAuction = currentState.auction
+                        if (currentAuction != null && currentAuction.id == update.auctionId) {
+                            val hasChanges = 
+                                (update.currentBid != null && update.currentBid != currentAuction.currentBid) ||
+                                (update.status != null && update.status != currentAuction.status)
+                            
+                            if (hasChanges) {
+                                currentState.copy(
+                                    auction = currentAuction.copy(
+                                        currentBid = update.currentBid ?: currentAuction.currentBid,
+                                        status = update.status ?: currentAuction.status
+                                    ),
+                                    lastAuctionUpdate = System.currentTimeMillis()
+                                )
+                            } else {
+                                currentState
+                            }
+                        } else {
+                            currentState
+                        }
+                    }
+                }
         }
     }
 
     fun loadAuction(auctionId: String) {
         viewModelScope.launch {
+            // Prevent loading the same auction multiple times
+            val currentState = _uiState.value
+            if (currentState.currentAuctionId?.toString() == auctionId && 
+                currentState.auction != null && 
+                !currentState.isLoading) {
+                println("DEBUG: Auction $auctionId already loaded, skipping...")
+                return@launch
+            }
+            
+            println("DEBUG: Loading auction $auctionId...")
             _uiState.update { it.copy(isLoading = true, error = null) }
             
             try {
                 val id = auctionId.toInt()
+                println("DEBUG: Parsed auction ID: $id")
                 
                 // Load auction details
                 auctionRepository.getAuctionDetail(id).fold(
                     onSuccess = { auction ->
+                        println("DEBUG: Successfully loaded auction: ${auction.title}")
                         _uiState.update { 
                             it.copy(
                                 auction = auction,
                                 isLoading = false,
-                                currentAuctionId = id
+                                currentAuctionId = id,
+                                error = null
                             )
                         }
                         
                         // Join real-time auction updates if repository is available
-                        biddingRepository?.joinAuction(id)
+                        try {
+                            biddingRepository?.joinAuction(id)
+                            println("DEBUG: Joined real-time updates for auction $id")
+                        } catch (e: Exception) {
+                            println("DEBUG: Failed to join real-time updates: ${e.message}")
+                        }
                         
                         // Load bid history
                         loadBidHistory(id)
                     },
                     onFailure = { exception ->
+                        println("DEBUG: Failed to load auction: ${exception.message}")
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
@@ -102,6 +164,7 @@ class EnhancedAuctionDetailViewModel(
                     }
                 )
             } catch (e: NumberFormatException) {
+                println("DEBUG: Invalid auction ID format: $auctionId")
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -114,14 +177,22 @@ class EnhancedAuctionDetailViewModel(
     
     private fun loadBidHistory(auctionId: Int) {
         viewModelScope.launch {
-            // Mock bid history for demo
-            val mockBids = listOf(
-                Bid(1, 45000.0, "2025-09-09T10:00:00Z", "User123"),
-                Bid(2, 47500.0, "2025-09-09T11:00:00Z", "Bidder456"),
-                Bid(3, 50000.0, "2025-09-09T12:00:00Z", "CarLover789")
-            )
-            kotlinx.coroutines.delay(300)
-            _uiState.update { it.copy(bidHistory = mockBids) }
+            println("DEBUG: Loading bid history for auction $auctionId")
+            try {
+                // Try to load real bid history from API
+                val result = biddingRepository?.getBidHistory(auctionId)
+                if (result?.isSuccess == true) {
+                    val bidHistory = result.getOrNull() ?: emptyList()
+                    _uiState.update { it.copy(bidHistory = bidHistory) }
+                    println("DEBUG: Loaded ${bidHistory.size} bids from API")
+                } else {
+                    println("DEBUG: Failed to get bid history from API")
+                    _uiState.update { it.copy(bidHistory = emptyList()) }
+                }
+            } catch (e: Exception) {
+                println("DEBUG: Exception loading bid history: ${e.message}")
+                _uiState.update { it.copy(bidHistory = emptyList()) }
+            }
         }
     }
 
@@ -194,13 +265,38 @@ class EnhancedAuctionDetailViewModel(
         }
     }
     
+    fun handleAuctionExpired() {
+        viewModelScope.launch {
+            // Update auction status to ended
+            _uiState.update { currentState ->
+                currentState.copy(
+                    auction = currentState.auction?.copy(
+                        status = "ended"
+                    ),
+                    connectionState = BidWebSocketClient.ConnectionState.DISCONNECTED
+                )
+            }
+            
+            // Disconnect from real-time bidding
+            biddingRepository?.disconnectFromRealTimeBidding()
+            
+            // Refresh to get final results
+            refreshAuction()
+        }
+    }
+    
     override fun onCleared() {
         super.onCleared()
         // Leave current auction and disconnect if repository is available
-        _uiState.value.currentAuctionId?.let { 
-            biddingRepository?.leaveAuction(it) 
+        try {
+            _uiState.value.currentAuctionId?.let { auctionId -> 
+                biddingRepository?.leaveAuction(auctionId)
+            }
+            biddingRepository?.disconnectFromRealTimeBidding()
+        } catch (e: Exception) {
+            // Log the error but don't crash the app during cleanup
+            println("DEBUG: Error during ViewModel cleanup: ${e.message}")
         }
-        biddingRepository?.disconnectFromRealTimeBidding()
     }
 }
 

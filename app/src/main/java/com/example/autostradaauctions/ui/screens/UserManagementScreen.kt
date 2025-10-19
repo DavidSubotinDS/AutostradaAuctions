@@ -23,14 +23,9 @@ fun UserManagementScreen(
     onEditUser: (String) -> Unit = {},
     onToggleUserStatus: (String) -> Unit = {}
 ) {
-    // Mock user data for now - in real app this would come from ViewModel
+    // TODO: Replace with real user data from UserRepository/ViewModel
     val mockUsers = remember {
-        listOf(
-            MockUser("1", "mock_admin", "mock.admin@autostrada.com", "Mock Admin", "User", UserRole.ADMIN, true),
-            MockUser("2", "mock_buyer", "mock.buyer@autostrada.com", "Mock Regular", "User", UserRole.BUYER, true),
-            MockUser("3", "bmw_dealer", "dealer1@example.com", "BMW", "Dealership", UserRole.SELLER, true),
-            MockUser("4", "tesla_dealer", "dealer2@example.com", "Tesla", "Center", UserRole.SELLER, false)
-        )
+        emptyList<MockUser>()
     }
     
     Column(
@@ -72,19 +67,19 @@ fun UserManagementScreen(
         ) {
             UserStatCard(
                 title = "Total",
-                value = mockUsers.size.toString(),
+                value = if (mockUsers.isEmpty()) "N/A" else mockUsers.size.toString(),
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.weight(1f)
             )
             UserStatCard(
                 title = "Active", 
-                value = mockUsers.count { it.isActive }.toString(),
+                value = if (mockUsers.isEmpty()) "N/A" else mockUsers.count { it.isActive }.toString(),
                 color = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier.weight(1f)
             )
             UserStatCard(
                 title = "Admins",
-                value = mockUsers.count { it.role == UserRole.ADMIN }.toString(),
+                value = if (mockUsers.isEmpty()) "N/A" else mockUsers.count { it.role == UserRole.ADMIN }.toString(),
                 color = MaterialTheme.colorScheme.tertiary,
                 modifier = Modifier.weight(1f)
             )

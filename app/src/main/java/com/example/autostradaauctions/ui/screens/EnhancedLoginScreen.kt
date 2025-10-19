@@ -49,17 +49,18 @@ fun EnhancedLoginScreen(
     // Handle login success
     LaunchedEffect(uiState.isLoggedIn) {
         if (uiState.isLoggedIn) {
-            // Create a mock user session for now
-            val mockUserSession = UserSession(
-                id = 1,
-                username = uiState.email,
+            // TODO: Replace with real user session from authentication service
+            // Temporary placeholder session to satisfy non-null requirement
+            val placeholderSession = UserSession(
+                id = 0,
+                username = "NEEDS_AUTH",
                 email = uiState.email,
-                firstName = "User",
-                lastName = "Test",
-                role = if (uiState.email.contains("admin")) UserRole.ADMIN else UserRole.BUYER,
-                isActive = true
+                firstName = "N/A",
+                lastName = "N/A", 
+                role = UserRole.BUYER,
+                isActive = false // Mark as inactive to indicate auth needed
             )
-            onLoginSuccess(mockUserSession)
+            onLoginSuccess(placeholderSession)
         }
     }
     

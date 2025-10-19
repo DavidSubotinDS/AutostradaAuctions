@@ -13,6 +13,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.Instant
+import java.time.Duration
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 class FavoritesViewModel(
@@ -80,8 +85,35 @@ class FavoritesViewModel(
     }
     
     fun calculateTimeLeft(endTime: String): String {
-        // Simple time calculation - you can enhance this
-        return "2d 5h left"
+        return try {
+            // Handle both formats: "2025-10-29T11:36:32.5329009" and "2025-10-29T11:36:32"
+            val cleanEndTime = endTime.substringBefore('.')
+            val endDateTime = LocalDateTime.parse(
+                cleanEndTime, 
+                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+            )
+            val endInstant = endDateTime.atZone(ZoneId.systemDefault()).toInstant()
+            val now = Instant.now()
+            
+            val remaining = Duration.between(now, endInstant)
+            
+            when {
+                remaining.isNegative || remaining.isZero -> "Ended"
+                else -> {
+                    val days = remaining.toDays()
+                    val hours = remaining.toHours() % 24
+                    val minutes = remaining.toMinutes() % 60
+                    val seconds = remaining.seconds % 60
+                    
+                    // Always show full format: days, hours, minutes, seconds
+                    "${days}d ${hours}h ${minutes}m ${seconds}s"
+                }
+            }
+        } catch (e: Exception) {
+            // Debug log to see what's causing the parsing issue
+            println("DEBUG: Error parsing endTime '$endTime': ${e.message}")
+            "Unknown"
+        }
     }
     
     fun getStatusColor(status: String): Color {

@@ -113,20 +113,8 @@ class AuthRepository(
             val user = authApiService.getUserProfile()
             Result.success(user)
         } catch (e: Exception) {
-            // For demo purposes, return a mock user if API fails but user is logged in
-            val mockUser = User(
-                id = 1,
-                firstName = "Demo",
-                lastName = "User",
-                email = "demo@example.com",
-                phone = "+1234567890",
-                profileImageUrl = null,
-                role = UserRole.BUYER,
-                isEmailVerified = true,
-                createdAt = "2024-01-01T00:00:00Z",
-                lastLoginAt = "2024-12-13T00:00:00Z"
-            )
-            Result.success(mockUser)
+            // Return actual error instead of mock data to enable proper debugging
+            Result.failure(Exception("Failed to get user profile: ${e.message}"))
         }
     }
     

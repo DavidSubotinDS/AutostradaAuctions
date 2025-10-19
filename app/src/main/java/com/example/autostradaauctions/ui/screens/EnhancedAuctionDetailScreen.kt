@@ -18,6 +18,7 @@ import com.example.autostradaauctions.di.AppContainer
 import com.example.autostradaauctions.ui.component.RealTimeBiddingPanel
 import com.example.autostradaauctions.ui.component.VehicleImageGallery
 import com.example.autostradaauctions.ui.component.AuctionInfoCard
+import com.example.autostradaauctions.ui.component.AuctionTimer
 import com.example.autostradaauctions.ui.viewmodel.EnhancedAuctionDetailViewModel
 import com.example.autostradaauctions.ui.viewmodel.EnhancedAuctionDetailViewModelFactory
 
@@ -36,6 +37,7 @@ fun EnhancedAuctionDetailScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     
     LaunchedEffect(auctionId) {
+        println("DEBUG: LaunchedEffect triggered for auction ID: $auctionId")
         viewModel.loadAuction(auctionId)
     }
     
@@ -49,7 +51,7 @@ fun EnhancedAuctionDetailScreen(
     
     Box(modifier = Modifier.fillMaxSize()) {
         when {
-            uiState.isLoading -> {
+            uiState.isLoading && uiState.auction == null -> {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -71,15 +73,41 @@ fun EnhancedAuctionDetailScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(24.dp)
                     ) {
-                        Text(
-                            text = errorMessage ?: "Unknown error occurred",
-                            color = MaterialTheme.colorScheme.error
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(64.dp)
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = { viewModel.refreshAuction() }) {
-                            Text("Retry")
+                        Text(
+                            text = "🚗 Auction Not Found",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = if (errorMessage?.contains("404") == true) {
+                                "This auction may have been removed or the link is incorrect."
+                            } else {
+                                errorMessage ?: "Unable to load auction details. Please check your connection."
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            OutlinedButton(onClick = onBackClick) {
+                                Text("← Go Back")
+                            }
+                            Button(onClick = { viewModel.refreshAuction() }) {
+                                Text("🔄 Retry")
+                            }
                         }
                     }
                 }
@@ -115,6 +143,16 @@ fun EnhancedAuctionDetailScreen(
                             VehicleImageGallery(
                                 imageUrls = auction.vehicle.imageUrls,
                                 vehicleTitle = "${auction.vehicle.year} ${auction.vehicle.make} ${auction.vehicle.model}"
+                            )
+                        }
+                        
+                        item {
+                            // Auction Timer
+                            AuctionTimer(
+                                endTime = auction.endTime,
+                                onAuctionExpired = {
+                                    viewModel.handleAuctionExpired()
+                                }
                             )
                         }
                         

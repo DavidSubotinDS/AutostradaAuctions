@@ -8,11 +8,12 @@ import com.microsoft.signalr.HubConnectionState
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import com.example.autostradaauctions.config.AppConfig
 
 class BidWebSocketClient {
     companion object {
         private const val TAG = "BidWebSocketClient"
-        private const val HUB_URL = "http://10.0.2.2:5117/biddingHub" // Android emulator localhost
+        private val HUB_URL = AppConfig.SIGNALR_HUB_URL // Use centralized config
     }
 
     private var hubConnection: HubConnection? = null
@@ -27,6 +28,13 @@ class BidWebSocketClient {
 
     fun connect() {
         try {
+            if (hubConnection?.connectionState == HubConnectionState.CONNECTED) {
+                Log.d(TAG, "Already connected")
+                return
+            }
+
+            _connectionState.tryEmit(ConnectionState.CONNECTING)
+            
             hubConnection = HubConnectionBuilder.create(HUB_URL)
                 .build()
 
@@ -49,39 +57,74 @@ class BidWebSocketClient {
                 _connectionState.tryEmit(ConnectionState.DISCONNECTED)
             }
 
-            // Start connection - this is not a suspend function in SignalR
-            hubConnection?.start()
-            Log.i(TAG, "Connected successfully")
-            _connectionState.tryEmit(ConnectionState.CONNECTED)
+            // Start connection asynchronously - simplified error handling
+            try {
+                hubConnection?.start()
+                Log.i(TAG, "Connection started")
+                _connectionState.tryEmit(ConnectionState.CONNECTED)
+            } catch (error: Exception) {
+                Log.e(TAG, "Failed to start connection", error)
+                _connectionState.tryEmit(ConnectionState.ERROR)
+            }
         } catch (error: Exception) {
-            Log.e(TAG, "Failed to connect", error)
+            Log.e(TAG, "Failed to initialize connection", error)
             _connectionState.tryEmit(ConnectionState.ERROR)
         }
     }
 
     fun disconnect() {
-        hubConnection?.stop()
-        hubConnection = null
-        _connectionState.tryEmit(ConnectionState.DISCONNECTED)
+        try {
+            try {
+                hubConnection?.stop()
+                hubConnection = null
+                _connectionState.tryEmit(ConnectionState.DISCONNECTED)
+                Log.d(TAG, "Disconnected successfully")
+            } catch (error: Exception) {
+                Log.w(TAG, "Error during disconnect", error)
+                hubConnection = null
+                _connectionState.tryEmit(ConnectionState.DISCONNECTED)
+            }
+        } catch (error: Exception) {
+            Log.e(TAG, "Failed to disconnect gracefully", error)
+            hubConnection = null
+            _connectionState.tryEmit(ConnectionState.DISCONNECTED)
+        }
     }
 
     fun joinAuction(auctionId: Int) {
         try {
-            hubConnection?.invoke("JoinAuction", auctionId)
-            Log.d(TAG, "Joined auction $auctionId")
+            if (isConnected()) {
+                hubConnection?.invoke("JoinAuction", auctionId)
+                Log.d(TAG, "Joined auction $auctionId")
+            } else {
+                Log.w(TAG, "Cannot join auction $auctionId - connection not active")
+            }
         } catch (error: Exception) {
             Log.e(TAG, "Failed to join auction $auctionId", error)
         }
     }
 
     fun leaveAuction(auctionId: Int) {
-        hubConnection?.invoke("LeaveAuction", auctionId)
+        try {
+            if (isConnected()) {
+                hubConnection?.invoke("LeaveAuction", auctionId)
+                Log.d(TAG, "Left auction $auctionId")
+            } else {
+                Log.w(TAG, "Cannot leave auction $auctionId - connection not active")
+            }
+        } catch (error: Exception) {
+            Log.e(TAG, "Failed to leave auction $auctionId", error)
+        }
     }
 
     fun placeBid(auctionId: Int, amount: Double, bidderName: String) {
         try {
-            hubConnection?.invoke("PlaceBid", auctionId, amount, bidderName)
-            Log.d(TAG, "Bid placed successfully: $amount")
+            if (isConnected()) {
+                hubConnection?.invoke("PlaceBid", auctionId, amount, bidderName)
+                Log.d(TAG, "Bid placed successfully: $amount")
+            } else {
+                Log.w(TAG, "Cannot place bid - connection not active")
+            }
         } catch (error: Exception) {
             Log.e(TAG, "Failed to place bid", error)
         }

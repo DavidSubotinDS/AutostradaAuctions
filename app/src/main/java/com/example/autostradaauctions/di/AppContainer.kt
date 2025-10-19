@@ -10,6 +10,8 @@ import com.example.autostradaauctions.data.repository.AuctionRepository
 import com.example.autostradaauctions.data.repository.MockAuctionRepository
 import com.example.autostradaauctions.data.repository.AuthRepository
 import com.example.autostradaauctions.data.repository.BiddingRepository
+import com.example.autostradaauctions.data.repository.ImageRepository
+import com.example.autostradaauctions.data.repository.AdminRepository
 import com.example.autostradaauctions.data.serialization.UserRoleAdapter
 import com.example.autostradaauctions.data.websocket.BidWebSocketClient
 import com.google.gson.GsonBuilder
@@ -94,7 +96,11 @@ object AppContainer {
         AuthRepository(authApiService, tokenManager)
     }
     
-    val auctionRepository: MockAuctionRepository by lazy {
+    val auctionRepository: AuctionRepository by lazy {
+        AuctionRepository(httpClient)
+    }
+    
+    val mockAuctionRepository: MockAuctionRepository by lazy {
         MockAuctionRepository()
     }
     
@@ -104,5 +110,13 @@ object AppContainer {
     
     val biddingRepository: BiddingRepository by lazy {
         BiddingRepository(auctionApiService, bidWebSocketClient)
+    }
+    
+    val imageRepository: ImageRepository by lazy {
+        ImageRepository(httpClient)
+    }
+    
+    val adminRepository: AdminRepository by lazy {
+        AdminRepository(httpClient)
     }
 }

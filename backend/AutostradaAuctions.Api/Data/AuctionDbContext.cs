@@ -13,6 +13,8 @@ namespace AutostradaAuctions.Api.Data
         public DbSet<Auction> Auctions { get; set; }
         public DbSet<Bid> Bids { get; set; }
         public DbSet<UserFavorite> UserFavorites { get; set; }
+        public DbSet<AuctionNotification> AuctionNotifications { get; set; }
+        // public DbSet<AuctionWatch> AuctionWatches { get; set; } // TODO: uncomment after model is recognized
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -53,6 +55,7 @@ namespace AutostradaAuctions.Api.Data
                 entity.Property(e => e.StartingPrice).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.ReservePrice).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.CurrentBid).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.BuyNowPrice).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.Status).HasConversion<int>();
 
                 // Relationships
@@ -105,7 +108,7 @@ namespace AutostradaAuctions.Api.Data
                     .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasOne(e => e.Auction)
-                    .WithMany()
+                    .WithMany(a => a.UserFavorites)
                     .HasForeignKey(e => e.AuctionId)
                     .OnDelete(DeleteBehavior.Cascade);
 
@@ -113,13 +116,59 @@ namespace AutostradaAuctions.Api.Data
                 entity.HasIndex(e => new { e.UserId, e.AuctionId }).IsUnique();
             });
 
+            // AuctionNotification entity configuration
+            modelBuilder.Entity<AuctionNotification>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.Message).IsRequired().HasMaxLength(1000);
+                entity.Property(e => e.Type).HasConversion<int>();
+
+                // Relationships
+                entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Auction)
+                    .WithMany()
+                    .HasForeignKey(e => e.AuctionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Index for efficient querying
+                entity.HasIndex(e => new { e.UserId, e.IsSent, e.TriggerTime });
+            });
+
+            // AuctionWatch entity configuration - TODO: uncomment after model is recognized
+            /*
+            modelBuilder.Entity<AuctionWatch>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                // Relationships
+                entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Auction)
+                    .WithMany()
+                    .HasForeignKey(e => e.AuctionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Unique constraint to prevent duplicate watches
+                entity.HasIndex(e => new { e.UserId, e.AuctionId }).IsUnique();
+            });
+            */
+
             // Seed data
             SeedData(modelBuilder);
         }
 
         private void SeedData(ModelBuilder modelBuilder)
         {
-            // Fixed datetime for seed data
+            // Fixed datetime for seed data - use UTC and static values
             var seedDate = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
             // Seed admin user
@@ -134,7 +183,14 @@ namespace AutostradaAuctions.Api.Data
                     PasswordHash = "$2a$11$wiAQrFy99wpavWH3alOxku8emSuSu4hJX6Zd8yOdnJAeXH5qr/bDe", // password: "password"
                     Role = UserRole.Admin,
                     IsEmailVerified = true,
-                    CreatedAt = seedDate
+                    CreatedAt = seedDate,
+                    PhoneNumber = "",
+                    DateOfBirth = new DateTime(1990, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                    Address = "",
+                    City = "",
+                    State = "",
+                    ZipCode = "",
+                    IsActive = true
                 },
                 new User
                 {
@@ -146,7 +202,14 @@ namespace AutostradaAuctions.Api.Data
                     PasswordHash = "$2a$11$wiAQrFy99wpavWH3alOxku8emSuSu4hJX6Zd8yOdnJAeXH5qr/bDe", // password: "password"
                     Role = UserRole.Buyer,
                     IsEmailVerified = true,
-                    CreatedAt = seedDate
+                    CreatedAt = seedDate,
+                    PhoneNumber = "",
+                    DateOfBirth = new DateTime(1995, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                    Address = "",
+                    City = "",
+                    State = "",
+                    ZipCode = "",
+                    IsActive = true
                 }
             );
 
@@ -196,38 +259,55 @@ namespace AutostradaAuctions.Api.Data
                 }
             );
 
-            // Seed sample auctions (using higher IDs to avoid conflicts)
+            // Seed sample auctions with dynamic timing and realistic statuses
+            // Using a fixed reference date for consistency in seeding
+            var referenceDate = new DateTime(2025, 9, 14, 12, 0, 0, DateTimeKind.Utc); // Current date
             modelBuilder.Entity<Auction>().HasData(
+                // 🔥 URGENT: Active auction ending in 15 minutes!
                 new Auction
                 {
                     Id = 10,
-                    Title = "2023 Tesla Model S - Premium Electric Sedan",
-                    Description = "Experience the future of driving with this pristine Tesla Model S featuring Autopilot, premium interior, and full self-driving capability.",
-                    VehicleId = 1,
-                    SellerId = 2,
-                    StartingPrice = 75000,
-                    ReservePrice = 85000,
-                    CurrentBid = 75000,
-                    StartTime = seedDate.AddDays(1),
-                    EndTime = seedDate.AddDays(8),
-                    Status = AuctionStatus.Scheduled,
-                    CreatedAt = seedDate
-                },
-                new Auction
-                {
-                    Id = 11,
-                    Title = "2022 BMW M3 - Track-Ready Performance",
+                    Title = "2022 BMW M3 - Track-Ready Performance (ENDING SOON!)",
                     Description = "High-performance BMW M3 with carbon fiber package, track-ready suspension, and manual transmission for the driving purist.",
                     VehicleId = 2,
                     SellerId = 2,
                     StartingPrice = 65000,
                     ReservePrice = 72000,
                     CurrentBid = 67500,
-                    StartTime = seedDate,
-                    EndTime = seedDate.AddDays(7),
+                    StartTime = referenceDate.AddDays(-6),
+                    EndTime = referenceDate.AddMinutes(15), // ⏰ Ending in 15 minutes!
                     Status = AuctionStatus.Active,
-                    CreatedAt = seedDate
+                    CreatedAt = referenceDate.AddDays(-7),
+                    SubmittedByUserId = "2",
+                    SubmittedAt = referenceDate.AddDays(-7),
+                    ViewCount = 45,
+                    WatchCount = 12,
+                    ContactInfo = "",
+                    HasReserve = true
                 },
+                // ⏳ Active auction ending in 1 hour
+                new Auction
+                {
+                    Id = 11,
+                    Title = "2023 Tesla Model S - Premium Electric Sedan",
+                    Description = "Experience the future of driving with this pristine Tesla Model S featuring Autopilot, premium interior, and full self-driving capability.",
+                    VehicleId = 1,
+                    SellerId = 2,
+                    StartingPrice = 75000,
+                    ReservePrice = 85000,
+                    CurrentBid = 78500,
+                    StartTime = referenceDate.AddDays(-5),
+                    EndTime = referenceDate.AddHours(1), // ⏰ Ending in 1 hour
+                    Status = AuctionStatus.Active,
+                    CreatedAt = referenceDate.AddDays(-6),
+                    SubmittedByUserId = "2",
+                    SubmittedAt = referenceDate.AddDays(-6),
+                    ViewCount = 62,
+                    WatchCount = 18,
+                    ContactInfo = "",
+                    HasReserve = true
+                },
+                // 🏁 Active auction ending in 6 hours
                 new Auction
                 {
                     Id = 12,
@@ -237,11 +317,61 @@ namespace AutostradaAuctions.Api.Data
                     SellerId = 2,
                     StartingPrice = 95000,
                     ReservePrice = 105000,
-                    CurrentBid = 95000,
-                    StartTime = seedDate.AddDays(2),
-                    EndTime = seedDate.AddDays(9),
-                    Status = AuctionStatus.Scheduled,
-                    CreatedAt = seedDate
+                    CurrentBid = 98000,
+                    StartTime = referenceDate.AddDays(-2),
+                    EndTime = referenceDate.AddHours(6), // ⏰ Ending in 6 hours
+                    Status = AuctionStatus.Active,
+                    CreatedAt = referenceDate.AddDays(-3),
+                    SubmittedByUserId = "2",
+                    SubmittedAt = referenceDate.AddDays(-3),
+                    ViewCount = 34,
+                    WatchCount = 8,
+                    ContactInfo = "",
+                    HasReserve = true
+                },
+                // 🆕 Recently added (pending approval)
+                new Auction
+                {
+                    Id = 13,
+                    Title = "2019 Ford Mustang GT - American Muscle",
+                    Description = "Powerful V8 engine, premium interior, and classic American muscle car styling. Perfect for enthusiasts.",
+                    VehicleId = 1,
+                    SellerId = 2,
+                    StartingPrice = 45000,
+                    ReservePrice = 52000,
+                    CurrentBid = 45000,
+                    StartTime = referenceDate,
+                    EndTime = referenceDate.AddDays(7),
+                    Status = AuctionStatus.PendingApproval, // 🆕 Recently added, awaiting approval
+                    CreatedAt = referenceDate.AddHours(-2), // Just submitted 2 hours ago
+                    SubmittedByUserId = "2",
+                    SubmittedAt = referenceDate.AddHours(-2),
+                    ViewCount = 5,
+                    WatchCount = 2,
+                    ContactInfo = "",
+                    HasReserve = true
+                },
+                // 📅 Active auction ending in ~24 hours (good for notification testing)
+                new Auction
+                {
+                    Id = 14,
+                    Title = "2021 Porsche 911 Turbo S - Track Beast",
+                    Description = "Ultimate performance machine with twin-turbo flat-six engine and PDK transmission. Track-tested perfection.",
+                    VehicleId = 1,
+                    SellerId = 1,
+                    StartingPrice = 180000,
+                    ReservePrice = 195000,
+                    CurrentBid = 185000,
+                    StartTime = referenceDate.AddDays(-6),
+                    EndTime = referenceDate.AddHours(23), // ⏰ Ending in ~24 hours
+                    Status = AuctionStatus.Active,
+                    CreatedAt = referenceDate.AddDays(-7),
+                    SubmittedByUserId = "1",
+                    SubmittedAt = referenceDate.AddDays(-7),
+                    ViewCount = 89,
+                    WatchCount = 25,
+                    ContactInfo = "",
+                    HasReserve = true
                 }
             );
 
@@ -259,7 +389,7 @@ namespace AutostradaAuctions.Api.Data
                     Id = 2,
                     UserId = 1, // Admin user
                     AuctionId = 12, // Mercedes-AMG GT
-                    CreatedAt = seedDate.AddHours(1)
+                    CreatedAt = new DateTime(2024, 1, 1, 1, 0, 0, DateTimeKind.Utc)
                 }
             );
         }

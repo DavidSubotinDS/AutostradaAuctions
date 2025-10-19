@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
@@ -22,6 +23,8 @@ import com.example.autostradaauctions.data.model.UserRole
 import com.example.autostradaauctions.ui.viewmodel.HomeViewModel
 import java.text.NumberFormat
 import java.util.*
+import java.time.*
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,6 +34,8 @@ fun HomeScreen(
     onProfileClick: () -> Unit = {},
     onFavoritesClick: () -> Unit = {},
     onAnalyticsClick: () -> Unit = {},
+    onSellClick: () -> Unit = {},
+    onSearchClick: () -> Unit = {},
     currentUserRole: UserRole? = null,
     viewModel: HomeViewModel = viewModel()
 ) {
@@ -75,6 +80,15 @@ fun HomeScreen(
                         )
                     }
                 }
+                // Sell button for authenticated users (sellers)
+                if (currentUserRole == UserRole.SELLER || currentUserRole == UserRole.ADMIN) {
+                    IconButton(onClick = onSellClick) {
+                        Icon(
+                            imageVector = Icons.Default.Sell,
+                            contentDescription = "Sell"
+                        )
+                    }
+                }
                 IconButton(onClick = onFavoritesClick) {
                     Icon(
                         imageVector = Icons.Default.Favorite,
@@ -98,20 +112,79 @@ fun HomeScreen(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // Full-width Search Bar
-        OutlinedTextField(
-            value = uiState.searchQuery,
-            onValueChange = viewModel::updateSearchQuery,
-            label = { Text("Search auctions...") },
-            leadingIcon = {
+        // Enhanced Search Bar (clickable)
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onSearchClick() },
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Icon(
                     imageVector = Icons.Default.Search,
-                    contentDescription = "Search"
+                    contentDescription = "Search",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-            },
-            modifier = Modifier.fillMaxWidth()
-        )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "Search luxury cars, classics, and more...",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
         
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Quick Stats Row
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            QuickStatCard(
+                title = "Live Auctions",
+                value = uiState.liveAuctionsCount.toString(),
+                icon = Icons.Default.Gavel
+            )
+            QuickStatCard(
+                title = "Ending Soon", 
+                value = uiState.endingSoonCount.toString(),
+                icon = Icons.Default.Timer
+            )
+            QuickStatCard(
+                title = "Total Bids",
+                value = "${uiState.totalBidsCount}",
+                icon = Icons.Default.TrendingUp
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Category Tabs
+        var selectedTab by remember { mutableIntStateOf(0) }
+        val tabs = listOf("Live Auctions", "Ending Soon", "Recently Added", "Closed")
+        
+        TabRow(
+            selectedTabIndex = selectedTab,
+            modifier = Modifier.padding(bottom = 16.dp)
+        ) {
+            tabs.forEachIndexed { index, title ->
+                Tab(
+                    selected = selectedTab == index,
+                    onClick = { selectedTab = index },
+                    text = { Text(title) }
+                )
+            }
+        }
+
         Spacer(modifier = Modifier.height(12.dp))
         
         // Filters Row
@@ -214,9 +287,32 @@ fun HomeScreen(
             }
             
             else -> {
+                // Get auctions based on selected tab
+                val displayAuctions = when (selectedTab) {
+                    0 -> uiState.filteredAuctions.filter { auction -> 
+                        auction.status.equals("active", ignoreCase = true) ||
+                        auction.status.equals("scheduled", ignoreCase = true)
+                    }
+                    1 -> uiState.filteredAuctions.filter { auction -> 
+                        auction.status.equals("active", ignoreCase = true) ||
+                        auction.status.equals("scheduled", ignoreCase = true)
+                    }.sortedBy { calculateTimeRemaining(it.endTime) }.take(10) // Sort by time remaining, take top 10
+                    2 -> uiState.filteredAuctions.filter { auction ->
+                        // Recently Added = Pending Approval status
+                        auction.status.equals("pendingapproval", ignoreCase = true) || 
+                        auction.status.equals("pending_approval", ignoreCase = true)
+                    }.sortedByDescending { it.id } // Show newest first
+                    3 -> uiState.filteredAuctions.filter { auction -> 
+                        auction.status.equals("closed", ignoreCase = true) || 
+                        auction.status.equals("ended", ignoreCase = true) ||
+                        auction.status.equals("sold", ignoreCase = true)
+                    }
+                    else -> uiState.filteredAuctions
+                }
+                
                 // Results header
                 Text(
-                    text = "${uiState.filteredAuctions.size} auctions found",
+                    text = "${displayAuctions.size} ${tabs[selectedTab].lowercase()} found",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Medium
                 )
@@ -227,18 +323,206 @@ fun HomeScreen(
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(uiState.filteredAuctions) { auction ->
-                        FunctionalAuctionCard(
+                    items(displayAuctions) { auction ->
+                        EnhancedAuctionCard(
                             auction = auction,
                             onAuctionClick = { 
                                 println("DEBUG: Card clicked for auction ${auction.id} - ${auction.title}")
                                 onAuctionClick(auction.id.toString()) 
-                            }
+                            },
+                            showTimer = selectedTab == 0 || selectedTab == 1 // Show timer for live and ending soon
                         )
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun QuickStatCard(
+    title: String,
+    value: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector
+) {
+    Card(
+        modifier = Modifier
+            .width(110.dp)
+            .height(80.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = title,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
+fun EnhancedAuctionCard(
+    auction: Auction,
+    onAuctionClick: () -> Unit,
+    showTimer: Boolean = true
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onAuctionClick() },
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            // Header row with title and status
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Text(
+                    text = auction.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
+                )
+                
+                // Status badge
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = when (auction.status.lowercase()) {
+                            "active" -> MaterialTheme.colorScheme.primaryContainer
+                            "scheduled" -> MaterialTheme.colorScheme.primaryContainer
+                            "closed", "ended" -> MaterialTheme.colorScheme.surfaceVariant
+                            else -> MaterialTheme.colorScheme.secondaryContainer
+                        }
+                    )
+                ) {
+                    Text(
+                        text = auction.status.uppercase(),
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // Vehicle info
+            Text(
+                text = "${auction.vehicle.year} ${auction.vehicle.make} ${auction.vehicle.model}",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium
+            )
+            
+            // Description
+            Text(
+                text = auction.description,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            // Price and timer row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Column {
+                    Text(
+                        text = "Current Bid",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = NumberFormat.getCurrencyInstance(Locale.US).format(auction.currentBid),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                
+                if (showTimer && (auction.status.equals("active", ignoreCase = true) || auction.status.equals("scheduled", ignoreCase = true))) {
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            text = "Time Remaining",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Timer,
+                                contentDescription = "Time remaining",
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = calculateTimeRemaining(auction.endTime),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Utility function to calculate time remaining
+private fun calculateTimeRemaining(endTime: String): String {
+    return try {
+        val endDateTime = LocalDateTime.parse(
+            endTime.substringBefore('.'), 
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+        )
+        val endInstant = endDateTime.atZone(ZoneId.systemDefault()).toInstant()
+        val now = Instant.now()
+        
+        val remaining = Duration.between(now, endInstant)
+        
+        when {
+            remaining.isNegative || remaining.isZero -> "Ended"
+            else -> {
+                val days = remaining.toDays()
+                val hours = remaining.toHours() % 24
+                val minutes = remaining.toMinutes() % 60
+                
+                when {
+                    days > 0 -> "${days}d ${hours}h"
+                    hours > 0 -> "${hours}h ${minutes}m"
+                    else -> "${minutes}m"
+                }
+            }
+        }
+    } catch (e: Exception) {
+        "Time N/A"
     }
 }
 

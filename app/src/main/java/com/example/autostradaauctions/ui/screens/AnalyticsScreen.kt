@@ -61,7 +61,7 @@ fun AnalyticsScreen(
                     item {
                         AnalyticsCard(
                             title = "Total Revenue",
-                            value = "$1,234,567",
+                            value = "N/A", // TODO: Replace with real revenue data
                             subtitle = "+12.5% from last month",
                             icon = Icons.Default.AttachMoney,
                             color = MaterialTheme.colorScheme.primary

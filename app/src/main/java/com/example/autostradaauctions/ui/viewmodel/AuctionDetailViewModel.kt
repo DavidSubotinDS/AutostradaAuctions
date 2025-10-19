@@ -8,8 +8,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.*
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.Instant
+import java.time.Duration
+import java.time.format.DateTimeFormatter
 import kotlin.math.abs
 
 data class AuctionDetailUiState(
@@ -54,30 +57,32 @@ class AuctionDetailViewModel : ViewModel() {
     
     fun calculateTimeLeft(endTime: String): String {
         return try {
-            val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
-            val endDate = format.parse(endTime)
-            val now = Date()
+            // Handle both formats: "2025-10-29T11:36:32.5329009" and "2025-10-29T11:36:32"
+            val cleanEndTime = endTime.substringBefore('.')
+            val endDateTime = LocalDateTime.parse(
+                cleanEndTime, 
+                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+            )
+            val endInstant = endDateTime.atZone(ZoneId.systemDefault()).toInstant()
+            val now = Instant.now()
             
-            if (endDate != null) {
-                val diffInMillis = endDate.time - now.time
-                
-                if (diffInMillis <= 0) {
-                    "Auction Ended"
-                } else {
-                    val days = diffInMillis / (1000 * 60 * 60 * 24)
-                    val hours = (diffInMillis / (1000 * 60 * 60)) % 24
-                    val minutes = (diffInMillis / (1000 * 60)) % 60
+            val remaining = Duration.between(now, endInstant)
+            
+            when {
+                remaining.isNegative || remaining.isZero -> "Ended"
+                else -> {
+                    val days = remaining.toDays()
+                    val hours = remaining.toHours() % 24
+                    val minutes = remaining.toMinutes() % 60
+                    val seconds = remaining.seconds % 60
                     
-                    when {
-                        days > 0 -> "${days}d ${hours}h ${minutes}m"
-                        hours > 0 -> "${hours}h ${minutes}m"
-                        else -> "${minutes}m"
-                    }
+                    // Always show full format: days, hours, minutes, seconds
+                    "${days}d ${hours}h ${minutes}m ${seconds}s"
                 }
-            } else {
-                "Unknown"
             }
         } catch (e: Exception) {
+            // Debug log to see what's causing the parsing issue
+            println("DEBUG: Error parsing endTime '$endTime': ${e.message}")
             "Unknown"
         }
     }

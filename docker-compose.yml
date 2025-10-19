@@ -31,7 +31,7 @@ services:
       - ASPNETCORE_URLS=http://+:5000
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=AutostradaAuctions;User Id=sa;Password=AutostradaDB123!;TrustServerCertificate=true;
     ports:
-      - "5000:5000"
+      - "5117:5000"
     depends_on:
       - sqlserver
     networks:

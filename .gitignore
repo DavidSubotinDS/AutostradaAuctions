@@ -86,3 +86,38 @@ backend/*/*.suo
 backend/*/*.sln.docstates
 backend/*/packages/
 backend/*/.vs/
+
+# .NET Runtime and library files
+*.dll
+*.exe  
+*.pdb
+*.deps.json
+*.runtimeconfig.json
+*.runtimeconfig.dev.json
+
+# Microsoft Extensions and third-party libraries
+Microsoft.*.dll
+System.*.dll
+Azure.*.dll
+Swashbuckle.*.dll
+Newtonsoft.Json.dll
+SQLitePCLRaw.*.dll
+BCrypt.Net-Next.dll
+Humanizer.dll
+Mono.TextTemplating.dll
+
+# Localization and runtime folders
+**/bin/**/cs/
+**/bin/**/de/
+**/bin/**/es/
+**/bin/**/fr/
+**/bin/**/it/
+**/bin/**/ja/
+**/bin/**/ko/
+**/bin/**/pl/
+**/bin/**/pt-BR/
+**/bin/**/ru/
+**/bin/**/tr/
+**/bin/**/zh-Hans/
+**/bin/**/zh-Hant/
+**/bin/**/runtimes/

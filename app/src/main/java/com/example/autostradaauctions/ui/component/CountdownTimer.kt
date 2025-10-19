@@ -9,9 +9,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
-import java.text.SimpleDateFormat
-import java.util.*
-import java.util.concurrent.TimeUnit
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.Instant
+import java.time.Duration
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun CountdownTimer(
@@ -22,34 +24,35 @@ fun CountdownTimer(
     var isExpired by remember { mutableStateOf(false) }
     
     LaunchedEffect(endTime) {
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault())
-        
         while (!isExpired) {
             try {
-                val endDate = dateFormat.parse(endTime)
-                val currentTime = System.currentTimeMillis()
-                val endTimeMillis = endDate?.time ?: 0L
+                // Handle both formats: "2025-10-29T11:36:32.5329009" and "2025-10-29T11:36:32"
+                val cleanEndTime = endTime.substringBefore('.')
+                val endDateTime = LocalDateTime.parse(
+                    cleanEndTime, 
+                    DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+                )
+                val endInstant = endDateTime.atZone(ZoneId.systemDefault()).toInstant()
+                val now = Instant.now()
                 
-                val remainingMillis = endTimeMillis - currentTime
+                val remaining = Duration.between(now, endInstant)
                 
-                if (remainingMillis <= 0) {
+                if (remaining.isNegative || remaining.isZero) {
                     timeRemaining = "Auction Ended"
                     isExpired = true
                 } else {
-                    val days = TimeUnit.MILLISECONDS.toDays(remainingMillis)
-                    val hours = TimeUnit.MILLISECONDS.toHours(remainingMillis) % 24
-                    val minutes = TimeUnit.MILLISECONDS.toMinutes(remainingMillis) % 60
-                    val seconds = TimeUnit.MILLISECONDS.toSeconds(remainingMillis) % 60
+                    val days = remaining.toDays()
+                    val hours = remaining.toHours() % 24
+                    val minutes = remaining.toMinutes() % 60
+                    val seconds = remaining.seconds % 60
                     
-                    timeRemaining = when {
-                        days > 0 -> "${days}d ${hours}h ${minutes}m"
-                        hours > 0 -> "${hours}h ${minutes}m ${seconds}s"
-                        else -> "${minutes}m ${seconds}s"
-                    }
+                    // Always show days, hours, minutes, seconds format as requested
+                    timeRemaining = "${days}d ${hours}h ${minutes}m ${seconds}s"
                 }
                 
                 delay(1000) // Update every second
             } catch (e: Exception) {
+                println("DEBUG: Error parsing endTime '$endTime': ${e.message}")
                 timeRemaining = "Invalid date"
                 isExpired = true
             }
