@@ -11,46 +11,62 @@ namespace AutostradaAuctions.Api.Data
             using var scope = serviceProvider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<AuctionDbContext>();
 
-            // Check if data already exists
+            Console.WriteLine("🔄 Checking existing data...");
+            
+            // Always reset for demo - delete existing data
             if (await context.Users.AnyAsync() || await context.Vehicles.AnyAsync() || await context.Auctions.AnyAsync())
             {
-                Console.WriteLine("⏭️ Database already contains data. Skipping realistic data seeding.");
-                Console.WriteLine("🔄 Demo auction timing will be handled by AuctionMonitoringService.");
-                return;
+                Console.WriteLine("🗑️ Clearing existing data for fresh demo...");
+                
+                // Delete in proper order to avoid foreign key issues
+                context.UserFavorites.RemoveRange(context.UserFavorites);
+                context.Bids.RemoveRange(context.Bids);
+                context.Auctions.RemoveRange(context.Auctions);
+                context.Vehicles.RemoveRange(context.Vehicles);
+                context.Users.RemoveRange(context.Users);
+                
+                await context.SaveChangesAsync();
+                Console.WriteLine("✅ Database cleared successfully!");
             }
 
-            Console.WriteLine("🌱 Starting realistic data seeding...");
+            Console.WriteLine("🌱 Starting comprehensive data seeding...");
 
-            // Create realistic users
+            // Create realistic users with proper IDs
             var users = CreateRealisticUsers();
             context.Users.AddRange(users);
             await context.SaveChangesAsync();
+            Console.WriteLine($"👥 Created {users.Count} users");
 
-            // Create realistic vehicles
+            // Create realistic vehicles 
             var vehicles = CreateRealisticVehicles();
             context.Vehicles.AddRange(vehicles);
             await context.SaveChangesAsync();
+            Console.WriteLine($"🚗 Created {vehicles.Count} vehicles");
 
-            // Create realistic auctions with different statuses
+            // Create realistic auctions with proper relationships
             var auctions = CreateRealisticAuctions(users, vehicles);
             context.Auctions.AddRange(auctions);
             await context.SaveChangesAsync();
+            Console.WriteLine($"🔨 Created {auctions.Count} auctions");
 
-            // Create realistic bids for active auctions
+            // Create realistic bids for auctions
             var bids = CreateRealisticBids(users, auctions);
             context.Bids.AddRange(bids);
             await context.SaveChangesAsync();
+            Console.WriteLine($"💰 Created {bids.Count} bids");
 
             // Update current bids on auctions
             foreach (var auction in auctions.Where(a => bids.Any(b => b.AuctionId == a.Id)))
             {
                 var highestBid = bids.Where(b => b.AuctionId == auction.Id).Max(b => b.Amount);
                 auction.CurrentBid = highestBid;
+                Console.WriteLine($"💵 Updated auction '{auction.Title}' current bid to ${highestBid:N0}");
             }
 
-            // Create some user favorites
+            // Create user favorites
             var favorites = CreateUserFavorites(users, auctions);
             context.UserFavorites.AddRange(favorites);
+            Console.WriteLine($"⭐ Created {favorites.Count} user favorites");
             
             await context.SaveChangesAsync();
 
@@ -63,12 +79,19 @@ namespace AutostradaAuctions.Api.Data
                 {
                     auction.WinningBidId = winningBid.Id;
                     winningBid.IsWinning = true;
+                    Console.WriteLine($"🏆 Set winning bid for '{auction.Title}': ${winningBid.Amount:N0}");
                 }
             }
 
             await context.SaveChangesAsync();
 
-            Console.WriteLine("✅ Realistic data seeding completed successfully!");
+            // Print summary of created data
+            var activeAuctions = auctions.Count(a => a.Status == AuctionStatus.Active);
+            var totalBids = bids.Count;
+            
+            Console.WriteLine("✅ Comprehensive data seeding completed successfully!");
+            Console.WriteLine($"📊 Summary: {users.Count} users, {vehicles.Count} vehicles, {auctions.Count} auctions ({activeAuctions} active), {totalBids} bids");
+            Console.WriteLine("🚀 Ready for live bidding demo!");
         }
 
         private static List<User> CreateRealisticUsers()
@@ -93,6 +116,25 @@ namespace AutostradaAuctions.Api.Data
                     IsActive = true,
                     Role = UserRole.Admin,
                     CreatedAt = DateTime.UtcNow.AddMonths(-6)
+                },
+                // Primary test user for app
+                new User
+                {
+                    FirstName = "John",
+                    LastName = "Smith",
+                    Email = "user@test.com",
+                    Username = "user123",
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("password"),
+                    PhoneNumber = "+1-555-0199",
+                    DateOfBirth = new DateTime(1990, 5, 20),
+                    Address = "456 Test Drive",
+                    City = "San Diego",
+                    State = "CA",
+                    ZipCode = "92101",
+                    IsEmailVerified = true,
+                    IsActive = true,
+                    Role = UserRole.Buyer,
+                    CreatedAt = DateTime.UtcNow.AddMonths(-2)
                 },
                 // Car dealer / frequent seller
                 new User
@@ -427,16 +469,16 @@ namespace AutostradaAuctions.Api.Data
                     ViewCount = 156,
                     WatchCount = 15
                 },
-                // LIVE AUCTION - Ending in 24 hours (McLaren)
+                // LIVE AUCTION - Ending in 24 hours (McLaren) - THE ONE IN YOUR SCREENSHOT
                 new Auction
                 {
                     Title = "2020 McLaren 720S - Signature Orange",
                     Description = "Exceptional McLaren 720S with carbon fiber body, luxury pack, and comprehensive maintenance records. A true driver's car.",
                     VehicleId = vehicles[3].Id,
                     SellerId = collector.Id,
-                    StartingPrice = 260000m,
-                    CurrentBid = 275000m,
-                    ReservePrice = 285000m,
+                    StartingPrice = 50000m,
+                    CurrentBid = 75000m,
+                    ReservePrice = 85000m,
                     StartTime = now.AddHours(-12),
                     EndTime = now.AddHours(24),
                     Status = AuctionStatus.Active,
@@ -545,17 +587,18 @@ namespace AutostradaAuctions.Api.Data
             var now = DateTime.UtcNow;
             
             var bidders = users.Where(u => u.Role == UserRole.Buyer).ToList();
+            var user123 = users.First(u => u.Username == "user123");
 
             // Ferrari bids (ending soon - very active)
             var ferrariAuction = auctions.First(a => a.Title.Contains("Ferrari"));
             bids.AddRange(new[]
             {
-                new Bid { AuctionId = ferrariAuction.Id, BidderId = bidders[0].Id, Amount = 220000m, Timestamp = now.AddDays(-3).AddMinutes(15) },
-                new Bid { AuctionId = ferrariAuction.Id, BidderId = bidders[1].Id, Amount = 235000m, Timestamp = now.AddDays(-3).AddHours(2) },
-                new Bid { AuctionId = ferrariAuction.Id, BidderId = bidders[2].Id, Amount = 245000m, Timestamp = now.AddDays(-2).AddHours(1) },
-                new Bid { AuctionId = ferrariAuction.Id, BidderId = bidders[0].Id, Amount = 255000m, Timestamp = now.AddDays(-2).AddHours(3) },
+                new Bid { AuctionId = ferrariAuction.Id, BidderId = bidders[1].Id, Amount = 220000m, Timestamp = now.AddDays(-3).AddMinutes(15) },
+                new Bid { AuctionId = ferrariAuction.Id, BidderId = bidders[2].Id, Amount = 235000m, Timestamp = now.AddDays(-3).AddHours(2) },
+                new Bid { AuctionId = ferrariAuction.Id, BidderId = bidders[3].Id, Amount = 245000m, Timestamp = now.AddDays(-2).AddHours(1) },
+                new Bid { AuctionId = ferrariAuction.Id, BidderId = user123.Id, Amount = 255000m, Timestamp = now.AddDays(-2).AddHours(3) },
                 new Bid { AuctionId = ferrariAuction.Id, BidderId = bidders[1].Id, Amount = 265000m, Timestamp = now.AddDays(-1).AddHours(2) },
-                new Bid { AuctionId = ferrariAuction.Id, BidderId = bidders[3].Id, Amount = 275000m, Timestamp = now.AddHours(-8) },
+                new Bid { AuctionId = ferrariAuction.Id, BidderId = bidders[4].Id, Amount = 275000m, Timestamp = now.AddHours(-8) },
                 new Bid { AuctionId = ferrariAuction.Id, BidderId = bidders[2].Id, Amount = 285000m, Timestamp = now.AddHours(-2) }
             });
 
@@ -563,40 +606,41 @@ namespace AutostradaAuctions.Api.Data
             var porscheAuction = auctions.First(a => a.Title.Contains("Porsche"));
             bids.AddRange(new[]
             {
-                new Bid { AuctionId = porscheAuction.Id, BidderId = bidders[1].Id, Amount = 180000m, Timestamp = now.AddDays(-2).AddMinutes(30) },
-                new Bid { AuctionId = porscheAuction.Id, BidderId = bidders[0].Id, Amount = 185000m, Timestamp = now.AddDays(-2).AddHours(4) },
-                new Bid { AuctionId = porscheAuction.Id, BidderId = bidders[2].Id, Amount = 190000m, Timestamp = now.AddDays(-1).AddHours(6) },
-                new Bid { AuctionId = porscheAuction.Id, BidderId = bidders[3].Id, Amount = 195500m, Timestamp = now.AddHours(-4) }
+                new Bid { AuctionId = porscheAuction.Id, BidderId = bidders[2].Id, Amount = 180000m, Timestamp = now.AddDays(-2).AddMinutes(30) },
+                new Bid { AuctionId = porscheAuction.Id, BidderId = user123.Id, Amount = 185000m, Timestamp = now.AddDays(-2).AddHours(4) },
+                new Bid { AuctionId = porscheAuction.Id, BidderId = bidders[3].Id, Amount = 190000m, Timestamp = now.AddDays(-1).AddHours(6) },
+                new Bid { AuctionId = porscheAuction.Id, BidderId = bidders[4].Id, Amount = 195500m, Timestamp = now.AddHours(-4) }
             });
 
             // Lamborghini bids (ending in 6 hours)
             var lamboAuction = auctions.First(a => a.Title.Contains("Lamborghini"));
             bids.AddRange(new[]
             {
-                new Bid { AuctionId = lamboAuction.Id, BidderId = bidders[0].Id, Amount = 240000m, Timestamp = now.AddDays(-1).AddMinutes(20) },
-                new Bid { AuctionId = lamboAuction.Id, BidderId = bidders[2].Id, Amount = 250000m, Timestamp = now.AddHours(-18) },
-                new Bid { AuctionId = lamboAuction.Id, BidderId = bidders[1].Id, Amount = 260000m, Timestamp = now.AddHours(-12) },
-                new Bid { AuctionId = lamboAuction.Id, BidderId = bidders[3].Id, Amount = 268750m, Timestamp = now.AddHours(-3) }
+                new Bid { AuctionId = lamboAuction.Id, BidderId = bidders[1].Id, Amount = 240000m, Timestamp = now.AddDays(-1).AddMinutes(20) },
+                new Bid { AuctionId = lamboAuction.Id, BidderId = bidders[3].Id, Amount = 250000m, Timestamp = now.AddHours(-18) },
+                new Bid { AuctionId = lamboAuction.Id, BidderId = user123.Id, Amount = 260000m, Timestamp = now.AddHours(-12) },
+                new Bid { AuctionId = lamboAuction.Id, BidderId = bidders[4].Id, Amount = 268750m, Timestamp = now.AddHours(-3) }
             });
 
-            // McLaren bids (ending in 24 hours)
+            // McLaren bids (ending in 24 hours) - THIS MATCHES YOUR SCREENSHOT
             var mclarenAuction = auctions.First(a => a.Title.Contains("McLaren"));
             bids.AddRange(new[]
             {
-                new Bid { AuctionId = mclarenAuction.Id, BidderId = bidders[1].Id, Amount = 260000m, Timestamp = now.AddHours(-10) },
-                new Bid { AuctionId = mclarenAuction.Id, BidderId = bidders[0].Id, Amount = 270000m, Timestamp = now.AddHours(-6) },
-                new Bid { AuctionId = mclarenAuction.Id, BidderId = bidders[2].Id, Amount = 275000m, Timestamp = now.AddHours(-2) }
+                new Bid { AuctionId = mclarenAuction.Id, BidderId = bidders[2].Id, Amount = 60000m, Timestamp = now.AddHours(-10) },
+                new Bid { AuctionId = mclarenAuction.Id, BidderId = user123.Id, Amount = 65000m, Timestamp = now.AddHours(-8) },
+                new Bid { AuctionId = mclarenAuction.Id, BidderId = bidders[1].Id, Amount = 70000m, Timestamp = now.AddHours(-6) },
+                new Bid { AuctionId = mclarenAuction.Id, BidderId = bidders[3].Id, Amount = 75000m, Timestamp = now.AddHours(-2) }
             });
 
             // Mercedes bids (ended auction)
             var mercedesAuction = auctions.First(a => a.Title.Contains("Mercedes"));
             var endedBids = new[]
             {
-                new Bid { AuctionId = mercedesAuction.Id, BidderId = bidders[0].Id, Amount = 150000m, Timestamp = now.AddDays(-5).AddMinutes(30) },
-                new Bid { AuctionId = mercedesAuction.Id, BidderId = bidders[1].Id, Amount = 155000m, Timestamp = now.AddDays(-4).AddHours(2) },
-                new Bid { AuctionId = mercedesAuction.Id, BidderId = bidders[2].Id, Amount = 160000m, Timestamp = now.AddDays(-3).AddHours(4) },
-                new Bid { AuctionId = mercedesAuction.Id, BidderId = bidders[3].Id, Amount = 165000m, Timestamp = now.AddDays(-2).AddHours(1) },
-                new Bid { AuctionId = mercedesAuction.Id, BidderId = bidders[0].Id, Amount = 168500m, Timestamp = now.AddHours(-3) }
+                new Bid { AuctionId = mercedesAuction.Id, BidderId = bidders[1].Id, Amount = 150000m, Timestamp = now.AddDays(-5).AddMinutes(30) },
+                new Bid { AuctionId = mercedesAuction.Id, BidderId = bidders[2].Id, Amount = 155000m, Timestamp = now.AddDays(-4).AddHours(2) },
+                new Bid { AuctionId = mercedesAuction.Id, BidderId = user123.Id, Amount = 160000m, Timestamp = now.AddDays(-3).AddHours(4) },
+                new Bid { AuctionId = mercedesAuction.Id, BidderId = bidders[4].Id, Amount = 165000m, Timestamp = now.AddDays(-2).AddHours(1) },
+                new Bid { AuctionId = mercedesAuction.Id, BidderId = bidders[1].Id, Amount = 168500m, Timestamp = now.AddHours(-3) }
             };
             
             bids.AddRange(endedBids);

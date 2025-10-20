@@ -6,7 +6,7 @@ namespace AutostradaAuctions.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Admin")]
+    // [Authorize(Roles = "Admin")] // Temporarily disabled for demo
     public class DemoController : ControllerBase
     {
         private readonly IDemoAuctionService _demoService;

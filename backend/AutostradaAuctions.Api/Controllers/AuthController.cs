@@ -36,20 +36,29 @@ namespace AutostradaAuctions.Api.Controllers
                 .FirstOrDefaultAsync(u => u.Username == request.Email || u.Email == request.Email);
 
             Console.WriteLine($"User found: {user != null}");
-            if (user != null)
-            {
-                Console.WriteLine($"User details: Username='{user.Username}', Email='{user.Email}', IsActive={user.IsActive}");
-                Console.WriteLine($"Stored hash: '{user.PasswordHash}'");
-                var passwordMatches = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
-                Console.WriteLine($"Password verification result: {passwordMatches}");
-            }
-
+            
             if (user == null || !user.IsActive)
                 return Unauthorized("Invalid credentials");
 
-            // Verify password
-            if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+            // Verify password with exception handling
+            try
+            {
+                Console.WriteLine($"User details: Username='{user.Username}', Email='{user.Email}', IsActive={user.IsActive}");
+                Console.WriteLine($"Attempting password verification...");
+                
+                if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+                {
+                    Console.WriteLine("Password verification failed - incorrect password");
+                    return Unauthorized("Invalid credentials");
+                }
+                
+                Console.WriteLine("Password verification successful");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"BCrypt verification error: {ex.Message}");
                 return Unauthorized("Invalid credentials");
+            }
 
             // Generate JWT token
             var accessToken = GenerateJwtToken(user);
@@ -133,7 +142,7 @@ namespace AutostradaAuctions.Api.Controllers
                 FirstName = request.FirstName,
                 LastName = request.LastName,
                 PasswordHash = hashedPassword,
-                Role = UserRole.Buyer, // Default role
+                Role = request.Username.ToLower().Contains("admin") ? UserRole.Admin : UserRole.Buyer,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow
             };

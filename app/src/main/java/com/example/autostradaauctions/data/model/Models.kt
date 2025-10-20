@@ -10,6 +10,8 @@ data class Auction(
     val startTime: String,
     val endTime: String,
     val status: String,
+    val viewCount: Int = 0,
+    val watchCount: Int = 0,
     val vehicle: Vehicle,
     val sellerName: String
 )
@@ -44,6 +46,11 @@ data class AuctionDetail(
     val startTime: String,
     val endTime: String,
     val status: String,
+    val viewCount: Int = 0,
+    val watchCount: Int = 0,
+    val contactInfo: String? = null,
+    val buyNowPrice: Double? = null,
+    val hasReserve: Boolean = false,
     val vehicle: VehicleDetail,
     val sellerName: String,
     val bids: List<Bid>
@@ -67,5 +74,7 @@ data class Bid(
     val id: Int,
     val amount: Double,
     val timestamp: String,
-    val bidderName: String
+    val bidderName: String,
+    val auctionId: Int? = null,
+    val isWinning: Boolean = false
 )

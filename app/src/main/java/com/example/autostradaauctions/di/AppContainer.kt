@@ -105,7 +105,7 @@ object AppContainer {
     }
     
     val bidWebSocketClient: BidWebSocketClient by lazy {
-        BidWebSocketClient()
+        BidWebSocketClient(tokenManager)
     }
     
     val biddingRepository: BiddingRepository by lazy {

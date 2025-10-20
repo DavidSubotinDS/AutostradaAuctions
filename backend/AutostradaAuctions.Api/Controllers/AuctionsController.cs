@@ -491,5 +491,7 @@ namespace AutostradaAuctions.Api.Controllers
         public decimal Amount { get; set; }
         public DateTime Timestamp { get; set; }
         public string BidderName { get; set; } = string.Empty;
+        public int AuctionId { get; set; }
+        public bool IsWinning { get; set; }
     }
 }

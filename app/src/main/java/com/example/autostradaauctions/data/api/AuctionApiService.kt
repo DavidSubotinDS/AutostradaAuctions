@@ -11,20 +11,20 @@ import retrofit2.http.POST
 import retrofit2.http.Path
 
 interface AuctionApiService {
-    @GET("api/auctions")
+    @GET("auctions")
     suspend fun getAuctions(): List<Auction>
     
-    @GET("api/auctions/{id}")
+    @GET("auctions/{id}")
     suspend fun getAuctionDetail(@Path("id") id: Int): AuctionDetail
     
-    @POST("api/auctions/{id}/bids")
-    suspend fun placeBid(@Path("id") auctionId: Int, @Body request: PlaceBidRequest)
+    @POST("bids")
+    suspend fun placeBid(@Body request: PlaceBidRequest): Bid
     
-    @GET("api/auctions/{id}/bids")
+    @GET("bids/auction/{id}")
     suspend fun getBidHistory(@Path("id") auctionId: Int): List<Bid>
 }
 
 object ApiConfig {
     // PERMANENT FIX: Use centralized AppConfig for consistent port management
-    val BASE_URL = AppConfig.BASE_URL.removeSuffix("/api/") + "/"
+    val BASE_URL = AppConfig.BASE_URL // Already includes /api/
 }

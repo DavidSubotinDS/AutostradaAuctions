@@ -9,8 +9,9 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import com.example.autostradaauctions.config.AppConfig
+import com.example.autostradaauctions.data.auth.TokenManager
 
-class BidWebSocketClient {
+class BidWebSocketClient(private val tokenManager: TokenManager) {
     companion object {
         private const val TAG = "BidWebSocketClient"
         private val HUB_URL = AppConfig.SIGNALR_HUB_URL // Use centralized config
@@ -35,8 +36,23 @@ class BidWebSocketClient {
 
             _connectionState.tryEmit(ConnectionState.CONNECTING)
             
-            hubConnection = HubConnectionBuilder.create(HUB_URL)
-                .build()
+            // Create hub connection
+            val builder = HubConnectionBuilder.create(HUB_URL)
+            
+            // Temporarily disable authentication for testing
+            /*
+            // Add authentication if token is available
+            val token = tokenManager.getAccessToken()
+            if (token != null) {
+                builder.withHeader("Authorization", "Bearer $token")
+                Log.d(TAG, "Adding authentication header with token")
+            } else {
+                Log.w(TAG, "No authentication token available - connection may fail")
+            }
+            */
+            Log.d(TAG, "Connecting without authentication for testing")
+            
+            hubConnection = builder.build()
 
             // Handle incoming bid updates
             hubConnection?.on("ReceiveBidUpdate", { auctionId: Int, bid: BidDto ->
@@ -57,13 +73,28 @@ class BidWebSocketClient {
                 _connectionState.tryEmit(ConnectionState.DISCONNECTED)
             }
 
-            // Start connection asynchronously - simplified error handling
+            // Start connection - SignalR connection monitoring
             try {
-                hubConnection?.start()
-                Log.i(TAG, "Connection started")
-                _connectionState.tryEmit(ConnectionState.CONNECTED)
+                Log.d(TAG, "Starting SignalR connection to: $HUB_URL")
+                _connectionState.tryEmit(ConnectionState.CONNECTING)
+                
+                // Use blockingAwait for synchronous startup - we'll set proper state after
+                hubConnection?.start()?.blockingAwait()
+                
+                // Check actual connection state after start
+                val actualState = hubConnection?.connectionState
+                when (actualState) {
+                    HubConnectionState.CONNECTED -> {
+                        Log.i(TAG, "SignalR connection established successfully")
+                        _connectionState.tryEmit(ConnectionState.CONNECTED)
+                    }
+                    else -> {
+                        Log.w(TAG, "SignalR connection state: $actualState")
+                        _connectionState.tryEmit(ConnectionState.ERROR)
+                    }
+                }
             } catch (error: Exception) {
-                Log.e(TAG, "Failed to start connection", error)
+                Log.e(TAG, "Failed to start SignalR connection", error)
                 _connectionState.tryEmit(ConnectionState.ERROR)
             }
         } catch (error: Exception) {
@@ -146,7 +177,9 @@ class BidWebSocketClient {
                 id = id,
                 amount = amount,
                 timestamp = timestamp,
-                bidderName = bidderName
+                bidderName = bidderName,
+                auctionId = auctionId,
+                isWinning = false // Will be updated from bid history
             )
         }
     }

@@ -36,7 +36,7 @@ class BiddingRepository(
     suspend fun placeBid(auctionId: Int, amount: Double, bidderName: String): Result<Unit> {
         return try {
             // Place bid via REST API first
-            apiService.placeBid(auctionId, PlaceBidRequest(amount, bidderName))
+            apiService.placeBid(PlaceBidRequest(auctionId, amount))
             
             // Also place bid via WebSocket for real-time update
             webSocketClient.placeBid(auctionId, amount, bidderName)
@@ -62,6 +62,6 @@ class BiddingRepository(
 }
 
 data class PlaceBidRequest(
-    val amount: Double,
-    val bidderName: String
+    val auctionId: Int,
+    val amount: Double
 )

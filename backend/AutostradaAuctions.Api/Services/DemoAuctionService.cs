@@ -78,10 +78,10 @@ namespace AutostradaAuctions.Api.Services
                         break;
                         
                     case var title when title.Contains("Tesla"):
-                        // Scheduled for future
-                        auction.StartTime = now.AddDays(3);
-                        auction.EndTime = now.AddDays(10);
-                        auction.Status = AuctionStatus.Scheduled;
+                        // Live auction for demo - ending in 4 hours
+                        auction.StartTime = now.AddHours(-1);
+                        auction.EndTime = now.AddHours(4);
+                        auction.Status = AuctionStatus.Active;
                         break;
                         
                     case var title when title.Contains("Mercedes"):

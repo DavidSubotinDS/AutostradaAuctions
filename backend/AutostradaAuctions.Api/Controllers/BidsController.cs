@@ -94,7 +94,9 @@ namespace AutostradaAuctions.Api.Controllers
                     Id = bid.Id,
                     Amount = bid.Amount,
                     Timestamp = bid.Timestamp,
-                    BidderName = $"{bid.Bidder.FirstName} {bid.Bidder.LastName[0]}."
+                    BidderName = $"{bid.Bidder.FirstName} {bid.Bidder.LastName[0]}.",
+                    AuctionId = bid.AuctionId,
+                    IsWinning = bid.Amount == auction.CurrentBid
                 };
 
                 return CreatedAtAction(nameof(GetBid), new { id = bid.Id }, bidDto);
@@ -124,7 +126,9 @@ namespace AutostradaAuctions.Api.Controllers
                 Id = bid.Id,
                 Amount = bid.Amount,
                 Timestamp = bid.Timestamp,
-                BidderName = $"{bid.Bidder.FirstName} {bid.Bidder.LastName[0]}."
+                BidderName = $"{bid.Bidder.FirstName} {bid.Bidder.LastName[0]}.",
+                AuctionId = bid.AuctionId,
+                IsWinning = false // This will be determined by the client based on current auction state
             };
 
             return Ok(bidDto);
@@ -136,6 +140,7 @@ namespace AutostradaAuctions.Api.Controllers
         {
             var bids = await _context.Bids
                 .Include(b => b.Bidder)
+                .Include(b => b.Auction)
                 .Where(b => b.AuctionId == auctionId)
                 .OrderByDescending(b => b.Timestamp)
                 .Take(50) // Limit to last 50 bids
@@ -144,7 +149,9 @@ namespace AutostradaAuctions.Api.Controllers
                     Id = b.Id,
                     Amount = b.Amount,
                     Timestamp = b.Timestamp,
-                    BidderName = $"{b.Bidder.FirstName} {b.Bidder.LastName[0]}."
+                    BidderName = $"{b.Bidder.FirstName} {b.Bidder.LastName[0]}.",
+                    AuctionId = b.AuctionId,
+                    IsWinning = b.Amount == b.Auction.CurrentBid
                 })
                 .ToListAsync();
 

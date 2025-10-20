@@ -4,36 +4,36 @@ import com.example.autostradaauctions.data.model.*
 import retrofit2.http.*
 
 interface AuthApiService {
-    @POST("api/auth/login")
+    @POST("auth/login")
     suspend fun login(@Body request: LoginRequest): AuthResponse
     
-    @POST("api/auth/register")
+    @POST("auth/register")
     suspend fun register(@Body request: RegisterRequest): AuthResponse
     
-    @POST("api/auth/refresh")
+    @POST("auth/refresh")
     suspend fun refreshToken(@Body refreshToken: String): AuthResponse
     
-    @POST("api/auth/logout")
+    @POST("auth/logout")
     suspend fun logout()
     
-    @GET("api/users/profile")
+    @GET("users/profile")
     suspend fun getUserProfile(): User
     
-    @PUT("api/users/profile")
+    @PUT("users/profile")
     suspend fun updateProfile(@Body user: User): User
     
-    @PUT("api/users/preferences")
+    @PUT("users/preferences")
     suspend fun updatePreferences(@Body preferences: UserPreferences): UserPreferences
     
-    @GET("api/users/favorites")
+    @GET("users/favorites")
     suspend fun getFavoriteAuctions(): List<Auction>
     
-    @POST("api/users/favorites/{auctionId}")
+    @POST("users/favorites/{auctionId}")
     suspend fun addToFavorites(@Path("auctionId") auctionId: Int)
     
-    @DELETE("api/users/favorites/{auctionId}")
+    @DELETE("users/favorites/{auctionId}")
     suspend fun removeFromFavorites(@Path("auctionId") auctionId: Int)
     
-    @GET("api/users/bid-history")
+    @GET("users/bid-history")
     suspend fun getUserBidHistory(): List<Bid>
 }
