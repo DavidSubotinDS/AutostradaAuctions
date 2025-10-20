@@ -29,8 +29,8 @@ android {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
             
-            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:5001/api/\"")
-            buildConfigField("String", "SIGNALR_HUB_URL", "\"http://10.0.2.2:5001/biddingHub\"")
+            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:5117/api/\"")
+            buildConfigField("String", "SIGNALR_HUB_URL", "\"http://10.0.2.2:5117/biddingHub\"")
             buildConfigField("boolean", "ENABLE_LOGGING", "true")
         }
         

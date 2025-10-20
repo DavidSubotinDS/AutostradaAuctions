@@ -16,12 +16,22 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
+        // 🚨 CRITICAL DEBUG: MainActivity onCreate called
+        println("🚨🚨🚨 MAINACTIVITY ONCREATE CALLED")
+        android.util.Log.d("AutostradaDebug", "🚨🚨🚨 MAINACTIVITY ONCREATE CALLED")
+        
         enableEdgeToEdge()
         setContent {
+            println("🚨 MAINACTIVITY SETCONTENT EXECUTING")
+            android.util.Log.d("AutostradaDebug", "🚨 MAINACTIVITY SETCONTENT EXECUTING")
+            
             AutostradaAuctionsTheme {
                 val navController = rememberNavController()
 
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                    println("🚨 MAINACTIVITY ABOUT TO CALL SIMPLENAVIGATION")
+                    android.util.Log.d("AutostradaDebug", "🚨 MAINACTIVITY ABOUT TO CALL SIMPLENAVIGATION")
+                    
                     SimpleNavigation(
                         navController = navController
                     )

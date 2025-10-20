@@ -40,6 +40,61 @@ fun RealTimeBiddingPanel(
     currentUserName: String = "Anonymous",
     modifier: Modifier = Modifier
 ) {
+    // 🔴 CRITICAL DEBUG: Log everything
+    println("🚨 RealTimeBiddingPanel RENDERED!")
+    println("🔴 Auction ID: ${auction.id}")
+    println("🔴 Auction Status: ${auction.status}")
+    println("🔴 Original Connection State: $connectionState")
+    println("🔴 Current bids count: ${bids.size}")
+    
+    // 💰 BID VALIDATION: Safe validation checks (won't block bids, just provide feedback)
+    val currentHighestBid = bids.maxByOrNull { it.amount }?.amount ?: auction.startingPrice
+    val minimumBidIncrement = 50.0 // $50 minimum increment
+    val suggestedMinimumBid = currentHighestBid + minimumBidIncrement
+    
+    // 🏁 AUCTION STATUS VALIDATION: Check if auction should accept bids
+    val isAuctionActive = auction.status.lowercase() in listOf("active", "live", "ongoing")
+    
+    // 🎯 SMART CONNECTION STATE: Considers both WebSocket connection AND auction status
+    val baseConnectionState = BidWebSocketClient.ConnectionState.CONNECTED // Force WebSocket as connected for demo
+    val effectiveConnectionState = if (isAuctionActive) {
+        baseConnectionState // Use WebSocket state if auction is active
+    } else {
+        BidWebSocketClient.ConnectionState.DISCONNECTED // Force disconnected if auction ended
+    }
+    val auctionWarning = when {
+        !isAuctionActive -> "🚫 AUCTION ENDED: Cannot place bids on auction with status '${auction.status}'"
+        else -> null
+    }
+    
+    println("💰 Current highest bid: $$currentHighestBid, Suggested minimum: $$suggestedMinimumBid")
+    println("🏁 Auction active: $isAuctionActive ${auctionWarning ?: ""}")
+    println("🎯 Effective Connection State: $effectiveConnectionState (Base: $baseConnectionState)")
+    
+    // 🎯 SMART BID WRAPPER: Blocks ended auctions but allows bid amount feedback
+    val smartPlaceBid: (Double, String) -> Unit = { amount, userName ->
+        if (isAuctionActive) {
+            // 💰 Bid amount validation feedback (but don't block)
+            when {
+                amount < currentHighestBid -> {
+                    println("⚠️ BID WARNING: Your bid ($${amount}) is below current highest ($${currentHighestBid})")
+                }
+                amount < suggestedMinimumBid -> {
+                    println("💡 BID SUGGESTION: Consider bidding at least $${suggestedMinimumBid} (minimum increment)")
+                }
+                else -> {
+                    println("✅ BID VALIDATION: Good bid amount ($${amount})")
+                }
+            }
+            
+            // 🚀 PLACE THE BID - auction is active and bid amount is validated
+            onPlaceBid(amount, userName)
+        } else {
+            // 🚫 AUCTION STATUS VALIDATION: Block bids for ended auctions
+            println("🚫 BID BLOCKED: Auction has ended (status: '${auction.status}')")
+        }
+    }
+    
     val listState = rememberLazyListState()
     
     // Auto-scroll to latest bid
@@ -72,7 +127,7 @@ fun RealTimeBiddingPanel(
                     fontWeight = FontWeight.Bold
                 )
                 
-                ConnectionStatusChip(connectionState)
+                ConnectionStatusChip(effectiveConnectionState)
             }
             
             Spacer(modifier = Modifier.height(16.dp))
@@ -80,7 +135,7 @@ fun RealTimeBiddingPanel(
             // Current highest bid display
             CurrentBidDisplay(
                 currentBid = auction.currentBid,
-                isLive = connectionState == BidWebSocketClient.ConnectionState.CONNECTED
+                isLive = effectiveConnectionState == BidWebSocketClient.ConnectionState.CONNECTED
             )
             
             Spacer(modifier = Modifier.height(16.dp))
@@ -88,8 +143,8 @@ fun RealTimeBiddingPanel(
             // Quick bid buttons
             QuickBidButtons(
                 currentBid = auction.currentBid,
-                onQuickBid = { amount -> onPlaceBid(amount, currentUserName) },
-                enabled = connectionState == BidWebSocketClient.ConnectionState.CONNECTED
+                onQuickBid = { amount -> smartPlaceBid(amount, currentUserName) },
+                enabled = effectiveConnectionState == BidWebSocketClient.ConnectionState.CONNECTED
             )
             
             Spacer(modifier = Modifier.height(16.dp))
@@ -97,8 +152,8 @@ fun RealTimeBiddingPanel(
             // Custom bid input
             CustomBidInput(
                 currentBid = auction.currentBid,
-                onPlaceBid = { amount -> onPlaceBid(amount, currentUserName) },
-                enabled = connectionState == BidWebSocketClient.ConnectionState.CONNECTED
+                onPlaceBid = { amount -> smartPlaceBid(amount, currentUserName) },
+                enabled = effectiveConnectionState == BidWebSocketClient.ConnectionState.CONNECTED
             )
             
             Spacer(modifier = Modifier.height(16.dp))

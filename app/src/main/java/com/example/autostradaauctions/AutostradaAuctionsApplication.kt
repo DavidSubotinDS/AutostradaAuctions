@@ -1,6 +1,7 @@
 package com.example.autostradaauctions
 
 import android.app.Application
+import android.util.Log
 import com.example.autostradaauctions.di.AppContainer
 import com.example.autostradaauctions.monitoring.HealthMonitor
 import com.example.autostradaauctions.config.AppConfig
@@ -15,19 +16,44 @@ class AutostradaAuctionsApplication : Application() {
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     
     override fun onCreate() {
+        println("🚨🚨🚨 APPLICATION ONCREATE STARTING")
+        Log.d("AutostradaDebug", "🚨🚨🚨 APPLICATION ONCREATE STARTING")
+        
         super.onCreate()
         
-        // Initialize core dependencies
-        AppContainer.initialize(this)
+        println("🚨 ABOUT TO INITIALIZE APPCONTAINER")
+        Log.d("AutostradaDebug", "🚨 ABOUT TO INITIALIZE APPCONTAINER")
         
-        // Initialize monitoring and health systems
-        initializeMonitoring()
-        
-        // Initialize security systems
-        initializeSecurity()
-        
-        // Perform background setup tasks
-        performBackgroundSetup()
+        try {
+            // Initialize core dependencies
+            AppContainer.initialize(this)
+            
+            println("🚨 APPCONTAINER INITIALIZED SUCCESSFULLY")
+            Log.d("AutostradaDebug", "🚨 APPCONTAINER INITIALIZED SUCCESSFULLY")
+            
+            // Initialize monitoring and health systems
+            initializeMonitoring()
+            
+            println("🚨 MONITORING INITIALIZED")
+            Log.d("AutostradaDebug", "🚨 MONITORING INITIALIZED")
+            
+            // Initialize security systems
+            initializeSecurity()
+            
+            println("🚨 SECURITY INITIALIZED")
+            Log.d("AutostradaDebug", "🚨 SECURITY INITIALIZED")
+            
+            // Perform background setup tasks
+            performBackgroundSetup()
+            
+            println("🚨🚨🚨 APPLICATION ONCREATE COMPLETED SUCCESSFULLY")
+            Log.d("AutostradaDebug", "🚨🚨🚨 APPLICATION ONCREATE COMPLETED SUCCESSFULLY")
+            
+        } catch (e: Exception) {
+            println("🚨💥 APPLICATION ONCREATE FAILED: ${e.message}")
+            Log.e("AutostradaDebug", "🚨💥 APPLICATION ONCREATE FAILED: ${e.message}", e)
+            throw e
+        }
     }
     
     /**

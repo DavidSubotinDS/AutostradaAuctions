@@ -45,6 +45,11 @@ fun EnhancedAuctionDetailScreen(
     println("🔥 ENHANCED AUCTION DETAIL SCREEN STARTED - auctionId=$auctionId")
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     
+    // Get authentication state
+    val isUserLoggedIn by AppContainer.authRepository.isLoggedIn.collectAsStateWithLifecycle()
+    val currentUserId = if (isUserLoggedIn) AppContainer.authRepository.getCurrentUserId().toString() else null
+    val currentUserEmail = if (isUserLoggedIn) AppContainer.authRepository.getCurrentUserEmail() else null
+    
     LaunchedEffect(auctionId) {
         println("DEBUG: LaunchedEffect triggered for auction ID: $auctionId")
         viewModel.loadAuction(auctionId)
@@ -189,6 +194,7 @@ fun EnhancedAuctionDetailScreen(
                             System.out.println("🚨 EXECUTING RealTimeBiddingPanel ITEM")
                             // Real-time Bidding Panel
                             println("🔥 ABOUT TO RENDER RealTimeBiddingPanel - auction=${auction.id}, status=${auction.status}")
+                            println("🔥 AUTHENTICATION STATE - isLoggedIn=$isUserLoggedIn, currentUserId=$currentUserId")
                             RealTimeBiddingPanel(
                                 auction = auction,
                                 bids = uiState.bidHistory,
@@ -196,7 +202,9 @@ fun EnhancedAuctionDetailScreen(
                                 onPlaceBid = { amount, bidderName ->
                                     viewModel.placeBid(amount, bidderName)
                                 },
-                                currentUserName = "You" // You can get this from user preferences
+                                currentUserName = currentUserEmail ?: "You",
+
+
                             )
                         }
                         
