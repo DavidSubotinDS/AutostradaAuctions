@@ -31,8 +31,15 @@ import com.example.autostradaauctions.data.model.UserRole
 fun SimpleNavigation(
     navController: NavHostController = rememberNavController()
 ) {
+    // 🚨 CRITICAL DEBUG: SimpleNavigation composable started
+    println("🚨🚨🚨 SIMPLENAVIGATION COMPOSABLE STARTED")
+    android.util.Log.d("AutostradaDebug", "🚨🚨🚨 SIMPLENAVIGATION COMPOSABLE STARTED")
+    
     // Current user session state
     val currentUser = remember { mutableStateOf<UserSession?>(null) }
+    
+    println("🚨 ABOUT TO CREATE NAVHOST")
+    android.util.Log.d("AutostradaDebug", "🚨 ABOUT TO CREATE NAVHOST")
     
     NavHost(
         navController = navController,
@@ -41,12 +48,13 @@ fun SimpleNavigation(
         composable("home") {
             HomeScreen(
                 onAuctionClick = { auctionId ->
-                    println("DEBUG: Navigation triggered for auction ID: $auctionId")
+                    println("🚨 NAVIGATION TRIGGERED: auction ID: $auctionId")
                     try {
                         navController.navigate("auction_detail/$auctionId")
-                        println("DEBUG: Navigation successful")
+                        println("🚨 NAVIGATION SUCCESSFUL: navigated to auction_detail/$auctionId")
                     } catch (e: Exception) {
-                        println("DEBUG: Navigation failed: ${e.message}")
+                        println("🚨 NAVIGATION FAILED: ${e.message}")
+                        e.printStackTrace()
                     }
                 },
                 onLoginClick = {
@@ -74,11 +82,12 @@ fun SimpleNavigation(
         
         composable("auction_detail/{auctionId}") { backStackEntry ->
             val auctionId = backStackEntry.arguments?.getString("auctionId") ?: ""
-            println("DEBUG: Entered auction detail screen with ID: $auctionId")
+            println("🚨 AUCTION DETAIL SCREEN: Starting with ID: $auctionId")
+            println("🚨 CALLING EnhancedAuctionDetailScreen")
             EnhancedAuctionDetailScreen(
                 auctionId = auctionId,
                 onBackClick = {
-                    println("DEBUG: Back button clicked")
+                    println("🚨 BACK BUTTON: clicked")
                     navController.popBackStack()
                 }
             )

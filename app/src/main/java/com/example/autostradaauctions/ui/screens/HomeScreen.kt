@@ -39,7 +39,14 @@ fun HomeScreen(
     currentUserRole: UserRole? = null,
     viewModel: HomeViewModel = viewModel()
 ) {
+    // 🚨 CRITICAL DEBUG: HomeScreen composable started
+    println("🚨🚨🚨 HOMESCREEN COMPOSABLE STARTED")
+    android.util.Log.d("AutostradaDebug", "🚨🚨🚨 HOMESCREEN COMPOSABLE STARTED")
+    
     val uiState by viewModel.uiState.collectAsState()
+    
+    println("🚨 HOMESCREEN UI STATE: $uiState")
+    android.util.Log.d("AutostradaDebug", "🚨 HOMESCREEN UI STATE: $uiState")
     
     Column(
         modifier = Modifier
@@ -327,7 +334,8 @@ fun HomeScreen(
                         EnhancedAuctionCard(
                             auction = auction,
                             onAuctionClick = { 
-                                println("DEBUG: Card clicked for auction ${auction.id} - ${auction.title}")
+                                println("🚨 CARD CLICKED: auction ${auction.id} - ${auction.title}")
+                                println("🚨 CALLING onAuctionClick with: ${auction.id.toString()}")
                                 onAuctionClick(auction.id.toString()) 
                             },
                             showTimer = selectedTab == 0 || selectedTab == 1 // Show timer for live and ending soon
@@ -498,17 +506,35 @@ fun EnhancedAuctionCard(
 // Utility function to calculate time remaining
 private fun calculateTimeRemaining(endTime: String): String {
     return try {
+        // Handle microseconds in timestamp: "2025-10-20T13:35:47.1553638"
+        val cleanEndTime = if (endTime.contains('.')) {
+            endTime.substringBefore('.')
+        } else {
+            endTime
+        }
         val endDateTime = LocalDateTime.parse(
-            endTime.substringBefore('.'), 
+            cleanEndTime, 
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
         )
-        val endInstant = endDateTime.atZone(ZoneId.systemDefault()).toInstant()
+        // DATABASE TIMES ARE IN UTC - interpret as UTC, not local timezone
+        val endInstant = endDateTime.atZone(java.time.ZoneOffset.UTC).toInstant()
         val now = Instant.now()
         
         val remaining = Duration.between(now, endInstant)
         
+        // DEBUG: Log the calculation with full details
+        println("DEBUG HomeScreen: endTime='$endTime'")
+        println("DEBUG HomeScreen: cleanEndTime='$cleanEndTime'")
+        println("DEBUG HomeScreen: endDateTime=$endDateTime") 
+        println("DEBUG HomeScreen: endInstant=$endInstant")
+        println("DEBUG HomeScreen: now=$now")
+        println("DEBUG HomeScreen: remaining=${remaining.toMinutes()}min, isNegative=${remaining.isNegative}")
+        
         when {
-            remaining.isNegative || remaining.isZero -> "Ended"
+            remaining.isNegative || remaining.isZero -> {
+                println("DEBUG HomeScreen: Returning 'Ended' because remaining is negative/zero")
+                "Ended"
+            }
             else -> {
                 val days = remaining.toDays()
                 val hours = remaining.toHours() % 24

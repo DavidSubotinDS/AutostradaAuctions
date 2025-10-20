@@ -40,13 +40,41 @@ fun AuctionTimer(
     LaunchedEffect(endTime) {
         while (!isExpired) {
             try {
-                // Parse the end time - you might need to adjust the format
-                val endDateTime = LocalDateTime.parse(endTime.substringBefore('.'), 
-                    DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"))
-                val endInstant = endDateTime.atZone(ZoneId.systemDefault()).toInstant()
-                val now = Instant.now()
+                // Parse the end time - DATABASE STORES UTC TIMES
+                // Handle microseconds in timestamp: "2025-10-20T13:35:47.1553638"
+                val cleanEndTime = if (endTime.contains('.')) {
+                    // Keep only up to 3 decimal places for milliseconds, ignore microseconds
+                    val parts = endTime.split('.')
+                    if (parts.size == 2) {
+                        val fractional = parts[1].take(3) // Take first 3 digits (milliseconds)
+                        "${parts[0]}.${fractional}"
+                    } else {
+                        endTime
+                    }
+                } else {
+                    endTime
+                }
                 
+                println("DEBUG: AuctionTimer parsing '$endTime' -> '$cleanEndTime'")
+                
+                // Try different formats
+                val endInstant = try {
+                    // Try with milliseconds first
+                    val endDateTime = LocalDateTime.parse(cleanEndTime, 
+                        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS"))
+                    endDateTime.atZone(java.time.ZoneOffset.UTC).toInstant()
+                } catch (e: Exception) {
+                    // Fall back to no milliseconds
+                    val noMillisTime = cleanEndTime.substringBefore('.')
+                    val endDateTime = LocalDateTime.parse(noMillisTime, 
+                        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"))
+                    endDateTime.atZone(java.time.ZoneOffset.UTC).toInstant()
+                }
+                
+                val now = Instant.now()
                 val remaining = Duration.between(now, endInstant)
+                
+                println("DEBUG: AuctionTimer remaining: ${remaining.toMinutes()} minutes")
                 
                 if (remaining.isNegative || remaining.isZero) {
                     isExpired = true
@@ -220,11 +248,37 @@ fun CircularAuctionTimer(
     LaunchedEffect(endTime) {
         while (!isExpired) {
             try {
-                val endDateTime = LocalDateTime.parse(endTime.substringBefore('.'), 
-                    DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"))
-                val endInstant = endDateTime.atZone(ZoneId.systemDefault()).toInstant()
-                val now = Instant.now()
+                // Handle microseconds in timestamp: "2025-10-20T13:35:47.1553638"
+                val cleanEndTime = if (endTime.contains('.')) {
+                    // Keep only up to 3 decimal places for milliseconds, ignore microseconds
+                    val parts = endTime.split('.')
+                    if (parts.size == 2) {
+                        val fractional = parts[1].take(3) // Take first 3 digits (milliseconds)
+                        "${parts[0]}.${fractional}"
+                    } else {
+                        endTime
+                    }
+                } else {
+                    endTime
+                }
                 
+                println("DEBUG: CircularAuctionTimer parsing '$endTime' -> '$cleanEndTime'")
+                
+                // Try different formats
+                val endInstant = try {
+                    // Try with milliseconds first
+                    val endDateTime = LocalDateTime.parse(cleanEndTime, 
+                        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS"))
+                    endDateTime.atZone(java.time.ZoneOffset.UTC).toInstant()
+                } catch (e: Exception) {
+                    // Fall back to no milliseconds
+                    val noMillisTime = cleanEndTime.substringBefore('.')
+                    val endDateTime = LocalDateTime.parse(noMillisTime, 
+                        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"))
+                    endDateTime.atZone(java.time.ZoneOffset.UTC).toInstant()
+                }
+                
+                val now = Instant.now()
                 val remaining = Duration.between(now, endInstant)
                 
                 if (remaining.isNegative || remaining.isZero) {

@@ -5,6 +5,8 @@ using AutostradaAuctions.Api.Models;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.SignalR;
+using AutostradaAuctions.Api.Hubs;
 
 namespace AutostradaAuctions.Api.Controllers
 {
@@ -14,11 +16,13 @@ namespace AutostradaAuctions.Api.Controllers
     {
         private readonly AuctionDbContext _context;
         private readonly ILogger<BidsController> _logger;
+        private readonly IHubContext<BiddingHub> _hubContext;
 
-        public BidsController(AuctionDbContext context, ILogger<BidsController> logger)
+        public BidsController(AuctionDbContext context, ILogger<BidsController> logger, IHubContext<BiddingHub> hubContext)
         {
             _context = context;
             _logger = logger;
+            _hubContext = hubContext;
         }
 
         // POST: api/bids
@@ -89,7 +93,7 @@ namespace AutostradaAuctions.Api.Controllers
                     .Reference(b => b.Bidder)
                     .LoadAsync();
 
-                var bidDto = new BidDto
+                var bidDto = new Hubs.BidDto
                 {
                     Id = bid.Id,
                     Amount = bid.Amount,
@@ -98,6 +102,10 @@ namespace AutostradaAuctions.Api.Controllers
                     AuctionId = bid.AuctionId,
                     IsWinning = bid.Amount == auction.CurrentBid
                 };
+
+                // Send SignalR notification to all users watching this auction
+                var groupName = $"auction_{request.AuctionId}";
+                await _hubContext.Clients.Group(groupName).SendAsync("ReceiveBidUpdate", request.AuctionId, bidDto);
 
                 return CreatedAtAction(nameof(GetBid), new { id = bid.Id }, bidDto);
             }

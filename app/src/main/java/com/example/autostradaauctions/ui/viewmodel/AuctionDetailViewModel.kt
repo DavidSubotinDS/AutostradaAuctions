@@ -57,13 +57,18 @@ class AuctionDetailViewModel : ViewModel() {
     
     fun calculateTimeLeft(endTime: String): String {
         return try {
-            // Handle both formats: "2025-10-29T11:36:32.5329009" and "2025-10-29T11:36:32"
-            val cleanEndTime = endTime.substringBefore('.')
+            // Handle microseconds in timestamp: "2025-10-20T13:35:47.1553638"
+            val cleanEndTime = if (endTime.contains('.')) {
+                endTime.substringBefore('.')
+            } else {
+                endTime
+            }
             val endDateTime = LocalDateTime.parse(
                 cleanEndTime, 
                 DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
             )
-            val endInstant = endDateTime.atZone(ZoneId.systemDefault()).toInstant()
+            // DATABASE TIMES ARE IN UTC - interpret as UTC, not local timezone
+            val endInstant = endDateTime.atZone(java.time.ZoneOffset.UTC).toInstant()
             val now = Instant.now()
             
             val remaining = Duration.between(now, endInstant)

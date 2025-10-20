@@ -15,6 +15,7 @@ import com.example.autostradaauctions.ui.theme.AutostradaAuctionsTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
         enableEdgeToEdge()
         setContent {
             AutostradaAuctionsTheme {

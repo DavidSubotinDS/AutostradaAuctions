@@ -27,13 +27,22 @@ import com.example.autostradaauctions.ui.viewmodel.EnhancedAuctionDetailViewMode
 fun EnhancedAuctionDetailScreen(
     auctionId: String,
     onBackClick: () -> Unit,
-    viewModel: EnhancedAuctionDetailViewModel = viewModel(
-        factory = EnhancedAuctionDetailViewModelFactory(
-            AppContainer.auctionRepository,
-            AppContainer.biddingRepository
+    viewModel: EnhancedAuctionDetailViewModel = run {
+        println("🔥 CREATING VIEWMODEL: AppContainer.auctionRepository = ${AppContainer.auctionRepository}")
+        println("🔥 CREATING VIEWMODEL: AppContainer.biddingRepository = ${AppContainer.biddingRepository}")
+        viewModel(
+            factory = EnhancedAuctionDetailViewModelFactory(
+                AppContainer.auctionRepository,
+                AppContainer.biddingRepository
+            )
         )
-    )
+    }
 ) {
+    // 🚨 CRITICAL DEBUG: This MUST appear if the composable is executing
+    println("🚨🚨🚨 COMPOSABLE EXECUTING - EnhancedAuctionDetailScreen started with ID: $auctionId")
+    System.out.println("🚨🚨🚨 COMPOSABLE EXECUTING - EnhancedAuctionDetailScreen started with ID: $auctionId")
+    
+    println("🔥 ENHANCED AUCTION DETAIL SCREEN STARTED - auctionId=$auctionId")
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     
     LaunchedEffect(auctionId) {
@@ -50,8 +59,12 @@ fun EnhancedAuctionDetailScreen(
     }
     
     Box(modifier = Modifier.fillMaxSize()) {
+        // CRITICAL DEBUG: Check which condition is being hit
+        println("🔍 UI STATE DEBUG: isLoading=${uiState.isLoading}, auction=${uiState.auction?.id ?: "NULL"}, error=${uiState.error ?: "NONE"}")
+        
         when {
             uiState.isLoading && uiState.auction == null -> {
+                println("📋 HIT CONDITION: Loading state with null auction")
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -67,6 +80,7 @@ fun EnhancedAuctionDetailScreen(
             }
             
             uiState.error != null -> {
+                println("❌ HIT CONDITION: Error state")
                 val errorMessage = uiState.error
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -115,6 +129,7 @@ fun EnhancedAuctionDetailScreen(
             
             uiState.auction != null -> {
                 val auction = uiState.auction!!
+                println("🚀 AUCTION LOADED SUCCESSFULLY: id=${auction.id}, status=${auction.status}, title=${auction.vehicle.year} ${auction.vehicle.make}")
                 Column(
                     modifier = Modifier.fillMaxSize()
                 ) {
@@ -133,12 +148,18 @@ fun EnhancedAuctionDetailScreen(
                         }
                     )
                     
+                    // 🚨 About to create LazyColumn
+                    println("🚨 BEFORE LAZYCOLUMN CREATION")
+                    
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                         contentPadding = PaddingValues(16.dp)
                     ) {
-                        item {
+                        println("🚨 INSIDE LAZYCOLUMN SCOPE")
+                        item { 
+                            println("🚨 FIRST LAZYCOLUMN ITEM EXECUTING")
+                            println("🚨 GALLERY ITEM EXECUTING")
                             // Vehicle Image Gallery
                             VehicleImageGallery(
                                 imageUrls = auction.vehicle.imageUrls,
@@ -147,6 +168,7 @@ fun EnhancedAuctionDetailScreen(
                         }
                         
                         item {
+                            println("🚨 TIMER ITEM EXECUTING")
                             // Auction Timer
                             AuctionTimer(
                                 endTime = auction.endTime,
@@ -157,12 +179,16 @@ fun EnhancedAuctionDetailScreen(
                         }
                         
                         item {
+                            println("🚨 AUCTION INFO ITEM EXECUTING")
                             // Auction Info Card
                             AuctionInfoCard(auction = auction)
                         }
                         
                         item {
+                            println("🚨 EXECUTING RealTimeBiddingPanel ITEM")
+                            System.out.println("🚨 EXECUTING RealTimeBiddingPanel ITEM")
                             // Real-time Bidding Panel
+                            println("🔥 ABOUT TO RENDER RealTimeBiddingPanel - auction=${auction.id}, status=${auction.status}")
                             RealTimeBiddingPanel(
                                 auction = auction,
                                 bids = uiState.bidHistory,
@@ -175,6 +201,7 @@ fun EnhancedAuctionDetailScreen(
                         }
                         
                         item {
+                            println("🚨 VEHICLE DETAILS ITEM EXECUTING")
                             // Vehicle Details (from your existing ComprehensiveAuctionDetailScreen)
                             VehicleDetailsSection(auction = auction)
                         }

@@ -131,22 +131,29 @@ fun RealTimeBiddingPanel(
 
 @Composable
 private fun ConnectionStatusChip(state: BidWebSocketClient.ConnectionState) {
+    println("🔴 ConnectionStatusChip received state: $state")
     val (color, text, icon) = when (state) {
-        BidWebSocketClient.ConnectionState.CONNECTED -> Triple(
-            Color.Green,
-            "Live",
-            Icons.Default.CheckCircle
-        )
+        BidWebSocketClient.ConnectionState.CONNECTED -> {
+            println("🟢 Showing CONNECTED state - Live with Green")
+            Triple(
+                Color.Green,
+                "Live",
+                Icons.Default.CheckCircle
+            )
+        }
         BidWebSocketClient.ConnectionState.CONNECTING -> Triple(
             Color(0xFFFF9800), // Orange color using hex value
             "Connecting",
             Icons.Default.Schedule
         )
-        BidWebSocketClient.ConnectionState.DISCONNECTED -> Triple(
-            Color.Gray,
-            "Offline",
-            Icons.Default.Circle
-        )
+        BidWebSocketClient.ConnectionState.DISCONNECTED -> {
+            println("🔴 Showing DISCONNECTED state - Offline with Gray")
+            Triple(
+                Color.Gray,
+                "Offline",
+                Icons.Default.Circle
+            )
+        }
         BidWebSocketClient.ConnectionState.ERROR -> Triple(
             Color.Red,
             "Error",
